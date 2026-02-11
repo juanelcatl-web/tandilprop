@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp Estable</title>
+    <title>TandilProp Elite</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,180 +11,163 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #fff; }
+        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: white; width: 100%; position: fixed; }
         
-        /* Contenedor principal para obligar al mapa a quedarse en su sitio */
-        .main-wrapper { 
-            display: flex; 
-            flex-direction: column; 
-            height: 100vh; 
-            width: 100%; 
-            max-width: 500px; 
-            margin: 0 auto; 
-        }
+        /* Estructura Principal */
+        .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
         
-        header { background: white; border-bottom: 1px solid #eee; padding: 12px 16px; flex-shrink: 0; z-index: 1000; }
+        header { flex-shrink: 0; background: white; border-bottom: 1px solid #eee; padding: 10px 15px; z-index: 50; }
         
-        .content-area { flex-grow: 1; position: relative; overflow: hidden; }
+        .main-content { flex-grow: 1; position: relative; width: 100%; }
         
-        .view { position: absolute; inset: 0; width: 100%; height: 100%; display: none; background: white; }
-        .view.active { display: block; z-index: 10; }
+        /* Vistas */
+        .view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; background: white; z-index: 10; }
+        .view.active { display: block; }
         
-        #map { height: 100%; width: 100%; z-index: 1; }
-        
+        /* Mapa ocupa el 100% de su vista */
+        #map { height: 100%; width: 100%; background: #ddd; }
+
+        /* Navegación Inferior */
         nav { 
-            height: 80px; 
-            background: white; 
-            border-top: 1px solid #eee; 
-            display: flex; 
-            justify-content: space-around; 
-            align-items: center; 
-            padding-bottom: env(safe-area-inset-bottom); 
-            flex-shrink: 0; 
-            z-index: 2000; /* Asegura que esté sobre el mapa */
+            height: 75px; flex-shrink: 0; background: white; border-top: 1px solid #eee; 
+            display: flex; justify-content: space-around; align-items: center; 
+            padding-bottom: env(safe-area-inset-bottom); z-index: 100;
         }
         
-        .nav-link { color: #94a3b8; font-size: 10px; font-weight: 800; text-transform: uppercase; border: none; background: none; }
-        .nav-link.active { color: #4f46e5; }
+        .nav-btn { flex: 1; border: none; background: none; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
+        .nav-btn.active { color: #4f46e5; }
         
-        .btn-plus { 
-            background: #4f46e5; color: white; width: 55px; height: 55px; border-radius: 18px; 
-            font-size: 30px; display: flex; align-items: center; justify-content: center; 
-            margin-top: -35px; border: 4px solid white; box-shadow: 0 10px 15px rgba(0,0,0,0.1); 
-            z-index: 3000;
+        .btn-plus-wrap { position: relative; width: 60px; height: 100%; display: flex; justify-content: center; z-index: 110; }
+        .plus-circle { 
+            position: absolute; top: -25px; background: #4f46e5; color: white; 
+            width: 55px; height: 55px; border-radius: 18px; font-size: 30px; 
+            display: flex; align-items: center; justify-content: center; 
+            border: 4px solid white; box-shadow: 0 8px 15px rgba(0,0,0,0.1);
         }
 
+        /* Publicidad */
         .ad-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
 <body>
 
-    <div id="ad-screen" class="ad-overlay">
-        <div class="text-center p-6 bg-slate-800 rounded-3xl border border-slate-700 mx-4">
-            <h2 class="text-indigo-500 font-black mb-4">PUBLICIDAD</h2>
-            <div class="w-full aspect-video bg-black rounded-xl mb-4 flex items-center justify-center">
-                <span class="animate-pulse text-indigo-400 font-bold italic">TandilProp Video</span>
-            </div>
-            <p id="timer-text" class="text-xs font-bold uppercase">Cargando...</p>
+<div id="ad-screen" class="ad-overlay">
+    <div class="text-center bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 mx-6">
+        <p class="text-indigo-500 font-black mb-2 uppercase text-[10px] tracking-widest">Publicidad</p>
+        <div class="w-48 h-24 bg-black rounded-2xl mb-4 flex items-center justify-center border border-indigo-500/20">
+            <span class="animate-pulse text-indigo-400 font-bold italic">TandilProp Ads</span>
         </div>
+        <p id="timer" class="text-xs font-bold uppercase text-slate-400">Cargando...</p>
     </div>
+</div>
 
-    <div class="main-wrapper">
-        <header>
-            <div class="flex justify-between items-center mb-3">
-                <h1 class="text-xl font-black text-indigo-600 italic">TANDILPROP</h1>
-                <button onclick="location.reload()" class="text-[10px] font-bold bg-slate-100 px-3 py-1 rounded-lg">REFRESCAR</button>
-            </div>
-            <div class="flex gap-2">
-                <select id="f-type" onchange="renderUI()" class="flex-1 bg-slate-100 text-[9px] p-2 rounded-lg font-black outline-none border-none">
-                    <option value="todos">TIPO: TODOS</option>
-                    <option value="casa">CASA</option>
-                    <option value="depto">DEPTO</option>
-                </select>
-                <select id="f-op" onchange="renderUI()" class="flex-1 bg-indigo-50 text-indigo-600 text-[9px] p-2 rounded-lg font-black outline-none border-none">
-                    <option value="todos">OP: TODAS</option>
-                    <option value="venta">VENTA</option>
-                    <option value="alquiler">ALQUILER</option>
-                </select>
-            </div>
-        </header>
+<div class="app-shell">
+    <header>
+        <div class="flex justify-between items-center mb-2">
+            <h1 class="text-xl font-black text-indigo-600 italic">TANDILPROP</h1>
+            <button onclick="location.reload()" class="text-[10px] bg-slate-100 px-3 py-1 rounded-lg font-bold">RECARGAR</button>
+        </div>
+        <div class="flex gap-2">
+            <select id="f-type" onchange="applyFilters()" class="flex-1 bg-slate-100 text-[9px] p-2 rounded-lg font-black outline-none border-none">
+                <option value="todos">TIPO: TODOS</option><option value="casa">CASA</option><option value="depto">DEPTO</option>
+            </select>
+            <select id="f-op" onchange="applyFilters()" class="flex-1 bg-indigo-50 text-indigo-600 text-[9px] p-2 rounded-lg font-black outline-none border-none">
+                <option value="todos">OP: TODAS</option><option value="venta">VENTA</option><option value="alquiler">ALQUILER</option>
+            </select>
+        </div>
+    </header>
 
-        <div class="content-area">
-            <div id="view-map" class="view active"><div id="map"></div></div>
-            <div id="view-list" class="view p-4 bg-slate-50 overflow-y-auto"><div id="list-container" class="space-y-4 pb-20"></div></div>
-            <div id="view-add" class="view p-6 overflow-y-auto">
-                <h2 class="text-xl font-black mb-6 italic uppercase">Publicar Propiedad</h2>
-                <div class="space-y-4 pb-24">
-                    <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                    <div class="flex gap-2">
-                        <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs"><option value="casa">Casa</option><option value="depto">Depto</option></select>
-                        <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
-                    </div>
-                    <input type="number" id="p-price" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                    
-                    <div class="flex gap-2">
-                        <input type="text" id="p-address" placeholder="Dirección en Tandil" class="flex-1 p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs outline-none">
-                        <button onclick="searchGeo()" class="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px]">UBICAR</button>
-                    </div>
+    <div class="main-content">
+        <div id="view-map" class="view active">
+            <div id="map"></div>
+        </div>
 
-                    <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494112233)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                    <input type="text" id="p-img" placeholder="URL Foto" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
-                    <button onclick="publish()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase shadow-lg">Subir Propiedad</button>
+        <div id="view-list" class="view p-4 overflow-y-auto">
+            <div id="list-container" class="space-y-4 pb-20"></div>
+        </div>
+
+        <div id="view-add" class="view p-6 overflow-y-auto">
+            <h2 class="text-xl font-black mb-4 italic uppercase">Publicar Propiedad</h2>
+            <div class="space-y-3 pb-24">
+                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
+                <div class="flex gap-2">
+                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs"><option value="casa">Casa</option><option value="depto">Depto</option></select>
+                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
                 </div>
+                <input type="number" id="p-price" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
+                
+                <div class="flex gap-2">
+                    <input type="text" id="p-address" placeholder="Dirección en Tandil" class="flex-1 p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs outline-none">
+                    <button onclick="searchGeo()" class="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px]">UBICAR</button>
+                </div>
+
+                <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494...)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
+                <input type="text" id="p-img" placeholder="URL Foto (Link)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
+                <button onclick="publish()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase shadow-lg mt-2">Subir Ahora</button>
             </div>
         </div>
-
-        <nav>
-            <button onclick="changeTab('map')" id="btn-map" class="nav-link active">MAPA</button>
-            <div onclick="changeTab('add')" class="btn-plus">+</div>
-            <button onclick="changeTab('list')" id="btn-list" class="nav-link">CATÁLOGO</button>
-        </nav>
     </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
-            authDomain: "tandilprop-56ec1.firebaseapp.com",
-            projectId: "tandilprop-56ec1",
-            databaseURL: "https://tandilprop-56ec1-default-rtdb.firebaseio.com"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database().ref('tandil_elite_v1');
+    <nav>
+        <button onclick="changeView('map')" id="btn-map" class="nav-btn active">MAPA</button>
+        <div class="btn-plus-wrap" onclick="changeView('add')">
+            <div class="plus-circle">+</div>
+        </div>
+        <button onclick="changeView('list')" id="btn-list" class="nav-btn">CATÁLOGO</button>
+    </nav>
+</div>
 
-        let map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
+        authDomain: "tandilprop-56ec1.firebaseapp.com",
+        projectId: "tandilprop-56ec1",
+        databaseURL: "https://tandilprop-56ec1-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('tandil_elite_v1');
 
-        let cLat = -37.3217, cLng = -59.1332;
+    // Inicializar Mapa
+    let map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        function changeTab(t) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
-            document.getElementById('view-' + t).classList.add('active');
-            if(t !== 'add') document.getElementById('btn-' + t).classList.add('active');
-            if(t === 'map') setTimeout(() => map.invalidateSize(), 300);
+    let currentLat = -37.3217, currentLng = -59.1332;
+
+    function changeView(v) {
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById('view-' + v).classList.add('active');
+        if(v !== 'add') document.getElementById('btn-' + v).classList.add('active');
+        
+        if(v === 'map') {
+            setTimeout(() => { map.invalidateSize(); }, 300);
         }
+    }
 
-        async function searchGeo() {
-            const addr = document.getElementById('p-address').value;
-            if(!addr) return;
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr + ', Tandil, Argentina')}`);
-            const data = await res.json();
-            if(data.length > 0) {
-                cLat = parseFloat(data[0].lat); cLng = parseFloat(data[0].lon);
-                map.setView([cLat, cLng], 17);
-                alert("📍 Ubicado.");
-            }
+    async function searchGeo() {
+        const addr = document.getElementById('p-address').value;
+        if(!addr) return;
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr + ', Tandil, Argentina')}`);
+        const data = await res.json();
+        if(data[0]) {
+            currentLat = parseFloat(data[0].lat); currentLng = parseFloat(data[0].lon);
+            map.setView([currentLat, currentLng], 17);
+            alert("📍 Ubicado correctamente");
         }
+    }
 
-        function runAd(cb) {
-            const ad = document.getElementById('ad-screen');
-            ad.style.display = 'flex';
-            let t = 3;
-            const i = setInterval(() => {
-                t--;
-                document.getElementById('timer-text').innerText = "Abriendo en " + t + "s...";
-                if(t <= 0) { clearInterval(i); ad.style.display = 'none'; cb(); }
-            }, 1000);
-        }
+    function runAd(cb) {
+        const ad = document.getElementById('ad-screen');
+        ad.style.display = 'flex';
+        let s = 3;
+        const int = setInterval(() => {
+            s--;
+            document.getElementById('timer').innerText = "Cargando en " + s + "s...";
+            if(s <= 0) { clearInterval(int); ad.style.display = 'none'; cb(); }
+        }, 1000);
+    }
 
-        function publish() {
-            const title = document.getElementById('p-title').value;
-            const price = document.getElementById('p-price').value;
-            const wa = document.getElementById('p-wa').value;
-            if(!title || !price || !wa) return alert("Faltan datos");
-
-            db.push({
-                title, price, wa,
-                type: document.getElementById('p-type').value,
-                op: document.getElementById('p-op').value,
-                img: document.getElementById('p-img').value,
-                lat: cLat, lng: cLng
-            }).then(() => {
-                alert("✅ Publicado!");
-                changeTab('map');
-            });
-        }
-
-        function renderUI() {
-            db.on('value', snap => {
-                const list = snap.val() ? Object.
+    function publish() {
+        const title = document.getElementById('p-title').value;
+        const price = document.getElementById('p-price').
