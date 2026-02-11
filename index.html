@@ -2,120 +2,83 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp Elite</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TandilProp Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: white; width: 100%; position: fixed; }
+        body, html { height: 100%; margin: 0; padding: 0; background: white; font-family: sans-serif; overflow: hidden; }
+        .app-container { display: flex; flex-direction: column; height: 100vh; }
         
-        /* Estructura Principal */
-        .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
+        header { padding: 15px; border-bottom: 1px solid #eee; background: white; flex-shrink: 0; }
+        .main-content { flex-grow: 1; position: relative; }
         
-        header { flex-shrink: 0; background: white; border-bottom: 1px solid #eee; padding: 10px 15px; z-index: 50; }
-        
-        .main-content { flex-grow: 1; position: relative; width: 100%; }
-        
-        /* Vistas */
-        .view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; background: white; z-index: 10; }
+        .view { position: absolute; inset: 0; display: none; background: white; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .view.active { display: block; }
         
-        /* Mapa ocupa el 100% de su vista */
-        #map { height: 100%; width: 100%; background: #ddd; }
-
-        /* Navegación Inferior */
-        nav { 
-            height: 75px; flex-shrink: 0; background: white; border-top: 1px solid #eee; 
-            display: flex; justify-content: space-around; align-items: center; 
-            padding-bottom: env(safe-area-inset-bottom); z-index: 100;
+        #map { height: 100%; width: 100%; z-index: 1; }
+        
+        nav { height: 75px; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; background: white; flex-shrink: 0; padding-bottom: 5px; }
+        .nav-item { color: #94a3b8; font-size: 11px; font-weight: bold; border: none; background: none; }
+        .nav-item.active { color: #4f46e5; }
+        
+        .btn-plus { 
+            background: #4f46e5; color: white; width: 55px; height: 55px; border-radius: 18px; 
+            font-size: 30px; display: flex; align-items: center; justify-content: center; 
+            margin-top: -35px; border: 4px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         
-        .nav-btn { flex: 1; border: none; background: none; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
-        .nav-btn.active { color: #4f46e5; }
-        
-        .btn-plus-wrap { position: relative; width: 60px; height: 100%; display: flex; justify-content: center; z-index: 110; }
-        .plus-circle { 
-            position: absolute; top: -25px; background: #4f46e5; color: white; 
-            width: 55px; height: 55px; border-radius: 18px; font-size: 30px; 
-            display: flex; align-items: center; justify-content: center; 
-            border: 4px solid white; box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-        }
-
-        /* Publicidad */
-        .ad-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .ad-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; }
     </style>
 </head>
 <body>
 
-<div id="ad-screen" class="ad-overlay">
-    <div class="text-center bg-slate-800 p-8 rounded-[2.5rem] border border-slate-700 mx-6">
-        <p class="text-indigo-500 font-black mb-2 uppercase text-[10px] tracking-widest">Publicidad</p>
-        <div class="w-48 h-24 bg-black rounded-2xl mb-4 flex items-center justify-center border border-indigo-500/20">
-            <span class="animate-pulse text-indigo-400 font-bold italic">TandilProp Ads</span>
+    <div id="ad-screen" class="ad-overlay">
+        <div class="text-center">
+            <p class="text-indigo-400 font-bold mb-4 uppercase">Publicidad</p>
+            <div class="w-64 h-36 bg-slate-800 rounded-2xl flex items-center justify-center border border-white/10 mb-4 italic font-black">TandilProp Ads</div>
+            <p id="timer" class="text-xs font-bold uppercase">Espere...</p>
         </div>
-        <p id="timer" class="text-xs font-bold uppercase text-slate-400">Cargando...</p>
     </div>
-</div>
 
-<div class="app-shell">
-    <header>
-        <div class="flex justify-between items-center mb-2">
+    <div class="app-container">
+        <header class="flex justify-between items-center">
             <h1 class="text-xl font-black text-indigo-600 italic">TANDILPROP</h1>
-            <button onclick="location.reload()" class="text-[10px] bg-slate-100 px-3 py-1 rounded-lg font-bold">RECARGAR</button>
-        </div>
-        <div class="flex gap-2">
-            <select id="f-type" onchange="applyFilters()" class="flex-1 bg-slate-100 text-[9px] p-2 rounded-lg font-black outline-none border-none">
-                <option value="todos">TIPO: TODOS</option><option value="casa">CASA</option><option value="depto">DEPTO</option>
-            </select>
-            <select id="f-op" onchange="applyFilters()" class="flex-1 bg-indigo-50 text-indigo-600 text-[9px] p-2 rounded-lg font-black outline-none border-none">
-                <option value="todos">OP: TODAS</option><option value="venta">VENTA</option><option value="alquiler">ALQUILER</option>
-            </select>
-        </div>
-    </header>
+            <div class="flex gap-1">
+                <select id="f-type" onchange="loadUI()" class="bg-slate-100 text-[10px] p-2 rounded-lg font-bold">
+                    <option value="todos">TIPO</option><option value="casa">CASA</option><option value="depto">DEPTO</option>
+                </select>
+            </div>
+        </header>
 
-    <div class="main-content">
-        <div id="view-map" class="view active">
-            <div id="map"></div>
-        </div>
-
-        <div id="view-list" class="view p-4 overflow-y-auto">
-            <div id="list-container" class="space-y-4 pb-20"></div>
-        </div>
-
-        <div id="view-add" class="view p-6 overflow-y-auto">
-            <h2 class="text-xl font-black mb-4 italic uppercase">Publicar Propiedad</h2>
-            <div class="space-y-3 pb-24">
-                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs"><option value="casa">Casa</option><option value="depto">Depto</option></select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-xs text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+        <div class="main-content">
+            <div id="v-map" class="view active"><div id="map"></div></div>
+            <div id="v-list" class="view p-4 bg-slate-50"><div id="l-cont" class="space-y-4 pb-20"></div></div>
+            <div id="v-add" class="view p-6">
+                <h2 class="font-bold mb-4">PUBLICAR</h2>
+                <div class="space-y-3">
+                    <input id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                    <input id="p-price" type="number" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                    <div class="flex gap-2">
+                        <input id="p-address" placeholder="Dirección Tandil" class="flex-1 p-4 bg-indigo-50 rounded-xl font-bold text-xs outline-none border border-indigo-100">
+                        <button onclick="searchGeo()" class="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px]">UBICAR</button>
+                    </div>
+                    <input id="p-wa" placeholder="WhatsApp (Ej: 2494...)" class="w-full p-4 bg-slate-100 rounded-xl outline-none font-bold">
+                    <input id="p-img" placeholder="Link Foto" class="w-full p-4 bg-slate-100 rounded-xl outline-none">
+                    <button onclick="save()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase mt-4">Subir Ahora</button>
                 </div>
-                <input type="number" id="p-price" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                
-                <div class="flex gap-2">
-                    <input type="text" id="p-address" placeholder="Dirección en Tandil" class="flex-1 p-4 bg-indigo-50 border border-indigo-100 rounded-xl font-bold text-xs outline-none">
-                    <button onclick="searchGeo()" class="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px]">UBICAR</button>
-                </div>
-
-                <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494...)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none font-bold">
-                <input type="text" id="p-img" placeholder="URL Foto (Link)" class="w-full p-4 bg-slate-100 rounded-2xl outline-none">
-                <button onclick="publish()" class="w-full bg-slate-900 text-white py-5 rounded-3xl font-black uppercase shadow-lg mt-2">Subir Ahora</button>
             </div>
         </div>
-    </div>
 
-    <nav>
-        <button onclick="changeView('map')" id="btn-map" class="nav-btn active">MAPA</button>
-        <div class="btn-plus-wrap" onclick="changeView('add')">
-            <div class="plus-circle">+</div>
-        </div>
-        <button onclick="changeView('list')" id="btn-list" class="nav-btn">CATÁLOGO</button>
-    </nav>
-</div>
+        <nav>
+            <button onclick="show('map')" id="n-map" class="nav-item active">MAPA</button>
+            <button onclick="show('add')" class="btn-plus">+</button>
+            <button onclick="show('list')" id="n-list" class="nav-item">LISTA</button>
+        </nav>
+    </div>
 
 <script>
     const firebaseConfig = {
@@ -125,49 +88,77 @@
         databaseURL: "https://tandilprop-56ec1-default-rtdb.firebaseio.com"
     };
     firebase.initializeApp(firebaseConfig);
-    const db = firebase.database().ref('tandil_elite_v1');
+    const db = firebase.database().ref('v_final');
 
-    // Inicializar Mapa
     let map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    let currentLat = -37.3217, currentLng = -59.1332;
+    let curLat = -37.3217, curLng = -59.1332;
 
-    function changeView(v) {
-        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
-        
-        document.getElementById('view-' + v).classList.add('active');
-        if(v !== 'add') document.getElementById('btn-' + v).classList.add('active');
-        
-        if(v === 'map') {
-            setTimeout(() => { map.invalidateSize(); }, 300);
-        }
+    function show(id) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.getElementById('v-' + id).classList.add('active');
+        if(id !== 'add') document.getElementById('n-' + id).classList.add('active');
+        if(id === 'map') setTimeout(() => map.invalidateSize(), 300);
     }
 
     async function searchGeo() {
-        const addr = document.getElementById('p-address').value;
-        if(!addr) return;
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr + ', Tandil, Argentina')}`);
-        const data = await res.json();
-        if(data[0]) {
-            currentLat = parseFloat(data[0].lat); currentLng = parseFloat(data[0].lon);
-            map.setView([currentLat, currentLng], 17);
-            alert("📍 Ubicado correctamente");
+        const a = document.getElementById('p-address').value;
+        if(!a) return;
+        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(a + ', Tandil, Argentina')}`);
+        const d = await r.json();
+        if(d[0]) {
+            curLat = parseFloat(d[0].lat); curLng = parseFloat(d[0].lon);
+            map.setView([curLat, curLng], 17);
+            alert("Ubicado.");
         }
+    }
+
+    function save() {
+        const t = document.getElementById('p-title').value;
+        const p = document.getElementById('p-price').value;
+        const w = document.getElementById('p-wa').value;
+        if(!t || !p || !w) return alert("Faltan datos");
+
+        db.push({ t, p, w, img: document.getElementById('p-img').value, lat: curLat, lng: curLng })
+        .then(() => { alert("Publicado!"); show('map'); });
     }
 
     function runAd(cb) {
         const ad = document.getElementById('ad-screen');
         ad.style.display = 'flex';
         let s = 3;
-        const int = setInterval(() => {
-            s--;
-            document.getElementById('timer').innerText = "Cargando en " + s + "s...";
-            if(s <= 0) { clearInterval(int); ad.style.display = 'none'; cb(); }
+        const i = setInterval(() => {
+            s--; document.getElementById('timer').innerText = "Cargando en " + s + "s...";
+            if(s <= 0) { clearInterval(i); ad.style.display = 'none'; cb(); }
         }, 1000);
     }
 
-    function publish() {
-        const title = document.getElementById('p-title').value;
-        const price = document.getElementById('p-price').
+    function loadUI() {
+        db.on('value', snap => {
+            const data = snap.val();
+            const list = data ? Object.values(data) : [];
+            
+            map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l) });
+            list.forEach(item => {
+                L.marker([item.lat, item.lng]).addTo(map).on('click', () => {
+                    runAd(() => alert(item.t + " - U$D " + item.p));
+                });
+            });
+
+            document.getElementById('l-cont').innerHTML = list.map(item => `
+                <div class="bg-white rounded-3xl overflow-hidden border shadow-sm p-3">
+                    <img src="${item.img || 'https://via.placeholder.com/400x200'}" class="w-full h-40 object-cover rounded-2xl mb-2">
+                    <h4 class="font-bold text-sm uppercase italic">${item.t}</h4>
+                    <p class="text-indigo-600 font-bold text-xl mb-3">U$D ${item.p}</p>
+                    <button onclick="runAd(() => window.open('https://wa.me/${item.w}'))" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold uppercase text-[10px]">Contactar</button>
+                </div>
+            `).reverse().join('');
+        });
+    }
+
+    loadUI();
+</script>
+</body>
+</html>
