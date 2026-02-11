@@ -11,7 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: white; width: 100%; position: fixed; }
+        body, html { height: 100%; margin: 0; padding: 0; overflow: hidden; background: white; width: 100%; position: fixed; font-family: system-ui, -apple-system, sans-serif; }
         .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100%; }
         header { flex-shrink: 0; background: white; border-bottom: 1px solid #eee; padding: 10px 15px; z-index: 1000; }
         .main-content { flex-grow: 1; position: relative; width: 100%; overflow: hidden; }
@@ -28,12 +28,12 @@
 <body>
 
 <div id="ad-screen" class="ad-overlay">
-    <div class="text-center p-8 bg-slate-900 rounded-[2.5rem] border border-slate-800 mx-6">
-        <span class="bg-indigo-600 text-[9px] px-3 py-1 rounded-full font-black uppercase">Publicidad</span>
+    <div class="text-center p-8 bg-slate-900 rounded-[2.5rem] border border-slate-800 mx-6 shadow-2xl">
+        <span class="bg-indigo-600 text-[9px] px-3 py-1 rounded-full font-black uppercase tracking-widest">Publicidad</span>
         <div class="w-48 h-28 bg-black rounded-2xl my-5 flex items-center justify-center border border-indigo-500/20">
-            <span class="animate-pulse text-indigo-400 font-bold italic text-lg text-center">TandilProp<br>Ads</span>
+            <span class="animate-pulse text-indigo-400 font-bold italic text-lg">TandilProp Ads</span>
         </div>
-        <p id="timer" class="text-[10px] font-black uppercase text-slate-500 italic">Cargando...</p>
+        <p id="timer" class="text-[10px] font-black uppercase text-slate-500">Cargando...</p>
     </div>
 </div>
 
@@ -44,48 +44,54 @@
             <button onclick="location.reload()" class="text-lg">🔄</button>
         </div>
         <div class="flex gap-2">
-            <select id="f-type" onchange="applyData()" class="flex-1 bg-slate-100 text-[9px] p-2.5 rounded-xl font-black outline-none">
-                <option value="todos">TIPO: TODOS</option>
-                <option value="casa">CASAS</option>
-                <option value="depto">DEPTOS</option>
-                <option value="terreno">TERRENOS</option>
+            <select id="f-type" onchange="applyData()" class="flex-1 bg-slate-100 text-[9px] p-2.5 rounded-xl font-black outline-none border-none">
+                <option value="todos">TIPO: TODOS</option><option value="casa">CASAS</option><option value="depto">DEPTOS</option><option value="terreno">TERRENOS</option>
             </select>
-            <select id="f-op" onchange="applyData()" class="flex-1 bg-indigo-50 text-indigo-600 text-[9px] p-2.5 rounded-xl font-black outline-none">
-                <option value="todos">OP: TODAS</option>
-                <option value="venta">VENTA</option>
-                <option value="alquiler">ALQUILER</option>
+            <select id="f-op" onchange="applyData()" class="flex-1 bg-indigo-50 text-indigo-600 text-[9px] p-2.5 rounded-xl font-black outline-none border-none">
+                <option value="todos">OP: TODAS</option><option value="venta">VENTA</option><option value="alquiler">ALQUILER</option>
             </select>
         </div>
     </header>
 
     <div class="main-content">
-        <div id="v-map" class="view active"><div id="map"></div></div>
-        <div id="v-list" class="view p-4 overflow-y-auto bg-slate-50"><div id="l-container" class="space-y-4 pb-24"></div></div>
+        <div id="v-map" class="view active">
+            <div id="map"></div>
+            <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
+                <p class="bg-white/90 backdrop-blur px-4 py-2 rounded-full shadow-lg text-[9px] font-bold text-slate-600 uppercase">Toca el mapa para publicar aquí 📍</p>
+            </div>
+        </div>
+        
+        <div id="v-list" class="view p-4 overflow-y-auto bg-slate-50">
+            <div id="l-container" class="space-y-4 pb-24"></div>
+        </div>
+
         <div id="v-add" class="view p-6 overflow-y-auto bg-white">
-            <h2 class="text-2xl font-black mb-6 italic uppercase">Publicar</h2>
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black italic uppercase tracking-tighter">Nueva Propiedad</h2>
+                <button onclick="changeView('map')" class="text-slate-400 font-bold text-xs">CANCELAR</button>
+            </div>
+            
             <div class="space-y-4 pb-28">
-                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold shadow-sm">
-                <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs uppercase">
-                        <option value="casa">Casa</option>
-                        <option value="depto">Depto</option>
-                        <option value="terreno">Terreno</option>
-                    </select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
-                </div>
-                <input type="number" id="p-price" placeholder="Precio en USD" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold shadow-sm">
-                
-                <div class="border-2 border-indigo-100 p-4 rounded-2xl bg-indigo-50/30">
-                    <div class="flex gap-2 mb-2">
-                        <input type="text" id="p-address" placeholder="Calle y N°" class="flex-1 p-3 bg-white border border-indigo-100 rounded-xl font-bold text-xs outline-none">
-                        <button onclick="searchGeo()" class="bg-indigo-600 text-white px-4 rounded-xl font-black text-[10px]">UBICAR</button>
-                    </div>
-                    <p class="text-[9px] text-slate-500 font-bold italic uppercase">O toca el mapa para marcar ubicación</p>
+                <div class="bg-indigo-600 text-white p-4 rounded-2xl shadow-lg shadow-indigo-200">
+                    <p class="text-[10px] font-black uppercase opacity-80 mb-1">Ubicación Seleccionada</p>
+                    <p id="p-coords-display" class="font-mono text-xs font-bold font-mono tracking-tight">Cargando posición...</p>
                 </div>
 
-                <input type="text" id="p-wa" placeholder="WhatsApp (2494...)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold shadow-sm outline-none">
-                <input type="text" id="p-img" placeholder="Link de Foto (URL)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none shadow-sm">
-                <button onclick="saveProp()" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase shadow-xl mt-4">Publicar Ahora</button>
+                <input type="text" id="p-title" placeholder="Título (Ej: Casa zona Uncas)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none shadow-sm">
+                
+                <div class="flex gap-2">
+                    <select id="p-type" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs uppercase"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+                    <select id="p-op" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+                </div>
+
+                <input type="number" id="p-price" placeholder="Precio en USD" class="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold border-none shadow-sm">
+                
+                <input type="text" id="p-address" placeholder="Dirección exacta (Nombre de calle y número)" class="w-full p-4 bg-indigo-50 border border-indigo-100 rounded-2xl font-bold text-xs outline-none">
+
+                <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494123456)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none shadow-sm outline-none">
+                <input type="text" id="p-img" placeholder="Link de Foto (URL)" class="w-full p-4 bg-slate-50 rounded-2xl outline-none border-none shadow-sm">
+                
+                <button onclick="saveProp()" class="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase shadow-xl mt-4 active:scale-95 transition-all">Confirmar y Publicar</button>
             </div>
         </div>
     </div>
@@ -93,7 +99,7 @@
     <nav>
         <button onclick="changeView('map')" id="n-map" class="nav-btn active">Mapa</button>
         <div class="plus-circle" onclick="changeView('add')">+</div>
-        <button onclick="changeView('list')" id="n-list" class="nav-btn">Lista</button>
+        <button onclick="changeView('list')" id="n-list" class="nav-btn">Catálogo</button>
     </nav>
 </div>
 
@@ -111,23 +117,14 @@
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
     let latC = -37.3217, lngC = -59.1332;
-    let tempMarker = null;
 
-    // MARCADOR MANUAL AL TOCAR MAPA
+    // --- LA MEJORA SOLICITADA: TOCAR MAPA ABRE EL FORMULARIO ---
     map.on('click', function(e) {
-        setMarker(e.latlng.lat, e.latlng.lng);
-        alert("📍 Ubicación fijada manualmente");
+        latC = e.latlng.lat;
+        lngC = e.latlng.lng;
+        document.getElementById('p-coords-display').innerText = `Lat: ${latC.toFixed(5)}, Lng: ${lngC.toFixed(5)}`;
+        changeView('add');
     });
-
-    function setMarker(lat, lng) {
-        latC = lat; lngC = lng;
-        if(tempMarker) map.removeLayer(tempMarker);
-        tempMarker = L.marker([lat, lng], {draggable: true}).addTo(map);
-        tempMarker.on('dragend', (e) => {
-            let p = e.target.getLatLng();
-            latC = p.lat; lngC = p.lng;
-        });
-    }
 
     function changeView(v) {
         document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
@@ -135,19 +132,6 @@
         document.getElementById('v-' + v).classList.add('active');
         if(v !== 'add') document.getElementById('n-' + v).classList.add('active');
         if(v === 'map') setTimeout(() => { map.invalidateSize(); }, 300);
-    }
-
-    async function searchGeo() {
-        const addr = document.getElementById('p-address').value;
-        if(!addr) return;
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addr + ', Tandil, Argentina')}`);
-            const data = await res.json();
-            if(data[0]) {
-                setMarker(parseFloat(data[0].lat), parseFloat(data[0].lon));
-                map.setView([latC, lngC], 17);
-            } else { alert("No se encontró."); }
-        } catch(e) { alert("Error."); }
     }
 
     function runAd(cb) {
@@ -164,19 +148,20 @@
         const title = document.getElementById('p-title').value;
         const price = document.getElementById('p-price').value;
         const wa = document.getElementById('p-wa').value;
-        const type = document.getElementById('p-type').value;
-        const op = document.getElementById('p-op').value;
-        const img = document.getElementById('p-img').value;
+        const address = document.getElementById('p-address').value;
+        if(!title || !price || !wa || !address) return alert("Por favor completa todos los campos, incluida la dirección");
 
-        if(!title || !price || !wa) return alert("Faltan datos");
-
-        db.push({ title, price, wa, type, op, img, lat: latC, lng: lngC })
-        .then(() => { 
-            alert("✅ Publicado!"); 
-            if(tempMarker) map.removeLayer(tempMarker);
+        db.push({
+            title, price, wa, address,
+            type: document.getElementById('p-type').value,
+            op: document.getElementById('p-op').value,
+            img: document.getElementById('p-img').value,
+            lat: latC, lng: lngC
+        }).then(() => { 
+            alert("✅ ¡Publicado exitosamente!"); 
             changeView('map');
-            document.getElementById('p-title').value = "";
-            document.getElementById('p-price').value = "";
+            // Limpiar formulario
+            ['p-title', 'p-price', 'p-wa', 'p-address', 'p-img'].forEach(id => document.getElementById(id).value = "");
         });
     }
 
@@ -187,32 +172,30 @@
             const tF = document.getElementById('f-type').value;
             const oF = document.getElementById('f-op').value;
             
-            const filtered = list.filter(p => {
-                const matchT = (tF === 'todos' || p.type === tF);
-                const matchO = (oF === 'todos' || p.op === oF);
-                return matchT && matchO;
-            });
+            const filtered = list.filter(p => (tF === 'todos' || p.type === tF) && (oF === 'todos' || p.op === oF));
 
-            map.eachLayer(l => { if(l instanceof L.Marker && l !== tempMarker) map.removeLayer(l) });
+            map.eachLayer(l => { if(l instanceof L.Marker) map.removeLayer(l) });
             filtered.forEach(p => {
                 const m = L.marker([p.lat, p.lng]).addTo(map);
-                if(p.type === 'terreno') m.getElement().style.filter = "hue-rotate(120deg)";
+                if(p.type === 'terreno') m.getElement().style.filter = "hue-rotate(120deg) brightness(1.2)";
                 m.on('click', () => {
-                    runAd(() => alert(`🏠 ${p.type.toUpperCase()}: ${p.title}\n💰 U$D ${p.price}`));
+                    runAd(() => alert(`🏠 ${p.title}\n📍 ${p.address}\n💰 U$D ${p.price}`));
                 });
             });
 
+            // --- SE AGREGA LA DIRECCIÓN EN LA TARJETA DEL CATÁLOGO ---
             document.getElementById('l-container').innerHTML = filtered.map(p => `
-                <div class="bg-white rounded-[2rem] overflow-hidden border p-3 shadow-lg">
-                    <img src="${p.img || 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400'}" class="w-full h-40 object-cover rounded-2xl mb-2">
-                    <div class="px-2">
+                <div class="bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-xl p-3 relative">
+                    <img src="${p.img || 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400'}" class="w-full h-44 object-cover rounded-[2rem] mb-3">
+                    <div class="px-3 pb-2">
                         <div class="flex gap-2 mb-1">
                             <span class="text-[8px] font-black bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full uppercase">${p.type}</span>
-                            <span class="text-[8px] font-black bg-slate-100 text-slate-700 px-2 py-1 rounded-full uppercase">${p.op}</span>
+                            <span class="text-[8px] font-black bg-slate-50 text-slate-500 px-2 py-1 rounded-full uppercase">${p.op}</span>
                         </div>
-                        <h4 class="font-black text-xs uppercase leading-tight">${p.title}</h4>
-                        <p class="text-indigo-600 font-black text-xl italic">U$D ${p.price}</p>
-                        <button onclick="runAd(() => window.open('https://wa.me/${p.wa}'))" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-[10px] mt-2 uppercase">WhatsApp</button>
+                        <h4 class="font-black text-slate-800 text-sm uppercase italic leading-tight">${p.title}</h4>
+                        <p class="text-indigo-500 font-bold text-[10px] mb-2 uppercase tracking-wide">📍 ${p.address || 'Dirección no especificada'}</p>
+                        <p class="text-indigo-600 font-black text-2xl mb-3">U$D ${p.price}</p>
+                        <button onclick="runAd(() => window.open('https://wa.me/${p.wa}'))" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px]">Contactar WhatsApp</button>
                     </div>
                 </div>
             `).reverse().join('');
