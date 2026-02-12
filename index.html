@@ -3,87 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TandilProp v27 - Blindada</title>
+    <title>TandilProp v28 - Total Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: #fff; }
-        .app-shell { display: flex; flex-direction: column; height: 100vh; }
-        header { height: 110px; background: white; border-bottom: 2px solid #f1f5f9; padding: 12px; z-index: 1000; flex-shrink: 0; }
-        .main-content { flex: 1; position: relative; overflow: hidden; }
-        .view { position: absolute; inset: 0; background: white; z-index: 10; display: none; }
+        body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; font-family: sans-serif; }
+        
+        /* Contenedores de Vista */
+        .view { position: fixed; inset: 0; display: none; background: white; z-index: 10; }
         .view.active { display: block; }
-        #map { width: 100% !important; height: 100% !important; background: #e5e7eb; }
+        
+        /* Mapa ocupa todo el fondo */
+        #map { width: 100vw; height: 100vh; position: absolute; z-index: 5; }
 
-        /* PINES: Colores con filtros CSS directos */
-        .pin-casa { filter: hue-rotate(0deg) !important; } 
-        .pin-depto { filter: hue-rotate(145deg) saturate(2) !important; } 
-        .pin-terreno { filter: hue-rotate(85deg) saturate(3) brightness(0.8) !important; } 
-        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.2) !important; }
-
-        #btn-confirm {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; background: #4f46e5; color: white; padding: 16px 28px;
-            border-radius: 20px; font-weight: 900; border: 3px solid white; display: none;
+        /* HEADER FLOTANTE */
+        header { 
+            position: fixed; top: 10px; left: 10px; right: 10px; 
+            background: white; border-radius: 20px; padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 1000;
         }
 
-        nav { height: 75px; background: white; border-top: 1px solid #f1f5f9; display: flex; z-index: 9999; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-weight: 800; }
-        .nav-item.active { color: #4f46e5; }
-        
-        #video-overlay { position: fixed; inset: 0; background: black; z-index: 100000; display: none; align-items: center; justify-content: center; }
+        /* NAVEGACIÓN FLOTANTE (ESTO NO FALLA) */
+        nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; display: flex; padding: 5px; border-radius: 50px;
+            z-index: 999999; box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            width: 80%; max-width: 300px;
+        }
+        .nav-btn {
+            flex: 1; padding: 12px; border-radius: 40px; color: white;
+            text-align: center; font-size: 11px; font-weight: 900; text-transform: uppercase;
+        }
+        .nav-btn.active { background: #4f46e5; }
+
+        /* Botón de Confirmar Ubicación */
+        #btn-confirm {
+            position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: #4f46e5; color: white; padding: 16px 30px; border-radius: 20px;
+            font-weight: 900; z-index: 2000; display: none; border: 3px solid white;
+        }
+
+        /* Pins */
+        .leaflet-marker-icon { filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+        .pin-casa { filter: hue-rotate(0deg) !important; }
+        .pin-depto { filter: hue-rotate(145deg) !important; }
+        .pin-terreno { filter: hue-rotate(85deg) saturate(2) !important; }
+        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.2) !important; }
+
+        #video-overlay { position: fixed; inset: 0; background: black; z-index: 2000000; display: none; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
 <div id="video-overlay">
-    <video id="transition-video" muted playsinline style="width:100%; height:100%; object-fit:cover; opacity:0.6">
+    <video id="transition-video" muted playsinline style="width:100%; height:100%; object-fit:cover;">
         <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-apartment-complex-buildings-at-sunset-15437-large.mp4" type="video/mp4">
     </video>
-    <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
-        <h2 class="text-3xl font-black italic">TANDILPROP</h2>
+    <div class="absolute inset-0 bg-black/40 flex items-center justify-center">
+        <h2 class="text-white text-2xl font-black italic">TANDILPROP</h2>
     </div>
 </div>
 
-<div class="app-shell">
-    <header>
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl font-black text-indigo-600 italic">TANDILPROP</h1>
-            <button onclick="location.reload()" class="text-[9px] bg-slate-100 px-2 py-1 rounded font-bold">RECARGAR APP</button>
-        </div>
-        <div class="flex gap-2">
-            <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border rounded-lg text-[10px] font-bold outline-none">
-                <option value="todos">TIPO: TODOS</option>
-                <option value="casa">CASAS</option>
-                <option value="depto">DEPTOS</option>
-                <option value="terreno">TERRENOS</option>
-            </select>
-            <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border rounded-lg text-[10px] font-bold outline-none">
-                <option value="todos">OPERACIÓN</option>
-                <option value="venta">VENTA</option>
-                <option value="alquiler">ALQUILER</option>
-            </select>
-        </div>
-    </header>
+<header>
+    <div class="flex justify-between items-center mb-2 px-2">
+        <h1 class="text-lg font-black text-indigo-600 italic">TANDILPROP</h1>
+        <span class="text-[8px] bg-slate-100 p-1 rounded font-bold">V28 STABLE</span>
+    </div>
+    <div class="flex gap-2">
+        <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border-none rounded-lg text-[10px] font-bold outline-none">
+            <option value="todos">TIPO: TODOS</option>
+            <option value="casa">🏠 CASAS</option>
+            <option value="depto">🏢 DEPTOS</option>
+            <option value="terreno">🌳 TERRENOS</option>
+        </select>
+        <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border-none rounded-lg text-[10px] font-bold outline-none">
+            <option value="todos">OPERACIÓN</option>
+            <option value="venta">VENTA</option>
+            <option value="alquiler">ALQUILER</option>
+        </select>
+    </div>
+</header>
 
-    <div class="main-content">
-        <div id="v-map" class="view active"><div id="map"></div><button id="btn-confirm" onclick="showView('form')">📍 CONFIRMAR AQUÍ</button></div>
-        <div id="v-list" class="view overflow-y-auto p-4 bg-slate-50"><div id="l-container" class="space-y-4 pb-20"></div></div>
-        <div id="v-form" class="view overflow-y-auto p-6">
-            <h2 class="text-2xl font-black mb-6 italic uppercase">Nueva Propiedad</h2>
-            <div class="space-y-4 pb-20">
-                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
-                <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
-                </div>
-                <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-indigo-50 rounded-xl font-bold">
-                <input type="number" id="p-price" placeholder="Precio U$D" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
-                <input type="text" id="p-wa" placeholder="WhatsApp" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
-                <input type="text" id="p-img" placeholder="URL Foto" class="w-full p-4 bg-slate-100 rounded-xl">
-                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Publicar</button>
-                <button
+<div id="v-map" class="view active">
+    <div id="map"></div>
+    <button id="btn-confirm" onclick="openForm()">📍 CONFIRMAR AQUÍ</button>
+</div>
+
+<div id="v-list" class="view overflow-y-auto p-4 pt-32 pb-32">
+    <div id="l-container" class="space-y-4"></div>
+</div>
+
+<div id="v-form" class="view overflow-y-auto p-6 pt-10">
+    <h2 class="text-2xl font-black italic mb-6">PUBLICAR</h2>
+    <div class="space-y-4 pb-20">
+        <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+        <div class="flex gap-2">
+            <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+            <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+        </div>
+        <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-indigo-50 rounded-xl font-bold outline-none border-2 border-indigo-200">
+        <input type="number" id="p-price" placeholder="U$D Precio" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+        <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494112233)" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+        <input type="text" id="p-img" placeholder="Link de Foto" class="w-full p-4 bg-slate-100 rounded-xl">
+        <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Publicar Ahora
