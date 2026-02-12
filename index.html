@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp v24 - Fix & AutoAddress</title>
+    <title>TandilProp v29 - WA Fix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -11,15 +11,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; background: #fff; font-family: system-ui; }
+        body, html { margin: 0; padding: 0; height: 100vh; overflow: hidden; background: #fff; font-family: system-ui, -apple-system, sans-serif; }
         .app-shell { display: flex; flex-direction: column; height: 100vh; }
-        header { height: 110px; background: white; border-bottom: 2px solid #f1f5f9; padding: 12px; z-index: 1000; }
+        header { height: 115px; background: white; border-bottom: 2px solid #f1f5f9; padding: 12px; z-index: 1000; }
         .main-content { flex: 1; position: relative; overflow: hidden; }
         .view { position: absolute; inset: 0; background: white; z-index: 10; display: none; }
         .view.active { display: block; }
         #map { width: 100%; height: 100%; z-index: 5; }
         
-        /* Botón Confirmar: Visible solo en modo "Agregar" */
         #btn-confirm {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 999; background: #4f46e5; color: white; padding: 18px 35px;
@@ -31,9 +30,10 @@
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 11px; font-weight: 800; }
         .nav-item.active { color: #4f46e5; }
 
-        /* Estilo de Pins */
-        .leaflet-marker-icon { transition: transform 0.2s; }
-        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.2) drop-shadow(0 0 5px rgba(0,0,0,0.5)); }
+        .pin-casa { filter: hue-rotate(0deg); }
+        .pin-depto { filter: hue-rotate(145deg); }
+        .pin-terreno { filter: hue-rotate(85deg) saturate(2); }
+        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.2); }
 
         #video-overlay { position: fixed; inset: 0; background: black; z-index: 100000; display: none; align-items: center; justify-content: center; }
     </style>
@@ -45,23 +45,23 @@
         <source src="https://assets.mixkit.co/videos/preview/mixkit-modern-apartment-complex-buildings-at-sunset-15437-large.mp4" type="video/mp4">
     </video>
     <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
-        <p class="text-amber-400 font-bold tracking-widest text-xs mb-2">CONECTANDO</p>
         <h2 class="text-3xl font-black italic">TANDILPROP</h2>
+        <p class="text-amber-400 font-bold text-[10px] mt-2 tracking-widest uppercase">Abriendo WhatsApp...</p>
     </div>
 </div>
 
 <div class="app-shell">
     <header>
         <div class="flex justify-between items-center mb-2">
-            <h1 class="text-2xl font-black text-indigo-600 italic italic tracking-tighter">TANDILPROP</h1>
-            <div class="bg-indigo-100 px-3 py-1 rounded-full text-[10px] font-black text-indigo-600">V24</div>
+            <h1 class="text-2xl font-black text-indigo-600 italic tracking-tighter">TANDILPROP</h1>
+            <div class="bg-indigo-100 px-3 py-1 rounded-full text-[10px] font-black text-indigo-600">v29 FIX</div>
         </div>
         <div class="flex gap-2">
             <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border rounded-lg text-[10px] font-bold">
-                <option value="todos">TIPOS</option>
-                <option value="casa">CASAS</option>
-                <option value="depto">DEPTOS</option>
-                <option value="terreno">TERRENOS</option>
+                <option value="todos">TIPO: TODOS</option>
+                <option value="casa">🏠 CASAS</option>
+                <option value="depto">🏢 DEPTOS</option>
+                <option value="terreno">🌳 TERRENOS</option>
             </select>
             <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border rounded-lg text-[10px] font-bold">
                 <option value="todos">OPERACIÓN</option>
@@ -76,35 +76,30 @@
             <div id="map"></div>
             <button id="btn-confirm" onclick="openForm()">📍 USAR ESTA UBICACIÓN</button>
         </div>
-
         <div id="v-list" class="view overflow-y-auto p-4 bg-slate-50">
             <div id="l-container" class="space-y-4 pb-28"></div>
         </div>
-
         <div id="v-form" class="view overflow-y-auto p-6">
-            <h2 class="text-2xl font-black mb-6 text-slate-800 uppercase italic">Publicar Propiedad</h2>
+            <h2 class="text-2xl font-black mb-6 italic">DETALLES</h2>
             <div class="space-y-4 pb-28">
-                <input type="text" id="p-title" placeholder="Título (ej: Casa zona Uncas)" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-indigo-500">
+                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
                 <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold uppercase"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
                 </div>
-                <div class="bg-indigo-50 p-4 rounded-xl border-2 border-indigo-100">
-                    <p class="text-[10px] font-bold text-indigo-400 mb-1 uppercase tracking-widest">Dirección Detectada</p>
-                    <input type="text" id="p-address" placeholder="Cargando dirección..." class="w-full bg-transparent font-black text-indigo-800 outline-none">
-                </div>
-                <input type="number" id="p-price" placeholder="Precio en U$D" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
-                <input type="text" id="p-wa" placeholder="WhatsApp (ej: 2494123456)" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
-                <input type="text" id="p-img" placeholder="Link de Foto (URL)" class="w-full p-4 bg-slate-100 rounded-xl">
-                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-xl active:scale-95 transition-all">Publicar en Tandil</button>
-                <button onclick="cancelAdd()" class="w-full py-2 text-slate-400 font-bold uppercase text-[10px] text-center tracking-widest">Cancelar y Volver</button>
+                <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-indigo-50 rounded-xl font-bold">
+                <input type="number" id="p-price" placeholder="U$D Precio" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+                <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494112233)" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+                <input type="text" id="p-img" placeholder="Link de Foto" class="w-full p-4 bg-slate-100 rounded-xl">
+                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Publicar</button>
+                <button onclick="cancelAdd()" class="w-full py-2 text-slate-400 font-bold text-center">Cancelar</button>
             </div>
         </div>
     </div>
 
     <nav>
-        <div id="t-map" onclick="showView('map')" class="nav-item active"><span class="text-2xl mb-1">🗺️</span>MAPA</div>
-        <div id="t-list" onclick="showView('list')" class="nav-item"><span class="text-2xl mb-1">📋</span>LISTA</div>
+        <div onclick="showView('map')" id="t-map" class="nav-item active"><span class="text-2xl mb-1">🗺️</span>MAPA</div>
+        <div onclick="showView('list')" id="t-list" class="nav-item"><span class="text-2xl mb-1">📋</span>LISTA</div>
     </nav>
 </div>
 
@@ -123,45 +118,44 @@
 
     var latC, lngC, tempM;
 
+    // FUNCIÓN WHATSAPP CORREGIDA PARA EVITAR BLOQUEOS
     function triggerConsult(wa) {
         const overlay = document.getElementById('video-overlay');
         const video = document.getElementById('transition-video');
         overlay.style.display = 'flex';
         video.play();
+        
+        // El navegador permite window.open si es una acción directa, 
+        // por eso lo disparamos un poco antes del cierre del video.
         setTimeout(() => {
-            window.open('https://wa.me/' + wa);
+            const link = "https://wa.me/" + wa.replace(/\D/g,'');
+            window.location.href = link; // Usamos href para que sea más directo en móviles
+        }, 3000);
+
+        setTimeout(() => {
             overlay.style.display = 'none';
             video.pause();
         }, 5000);
     }
 
-    // MEJORA: Solo agregar pin si se toca el mapa vacío
     map.on('click', function(e) {
-        // Evitamos que se cree un pin si estamos tocando un marcador existente
         if (e.originalEvent.target.classList.contains('leaflet-marker-icon')) return;
-
         if(tempM) map.removeLayer(tempM);
         latC = e.latlng.lat; lngC = e.latlng.lng;
-        
         tempM = L.marker([latC, lngC], {draggable: true}).addTo(map);
         tempM.getElement().classList.add('pin-nuevo');
         document.getElementById('btn-confirm').style.display = 'block';
-
-        // Auto-detectar dirección mientras el pin está en el mapa
-        updateAddress(latC, lngC);
-
-        tempM.on('dragend', function(ev) {
-            latC = ev.target.getLatLng().lat;
-            lngC = ev.target.getLatLng().lng;
-            updateAddress(latC, lngC);
+        updateAddr(latC, lngC);
+        tempM.on('dragend', (ev) => {
+            latC = ev.target.getLatLng().lat; lngC = ev.target.getLatLng().lng;
+            updateAddr(latC, lngC);
         });
     });
 
-    function updateAddress(lat, lng) {
+    function updateAddr(lat, lng) {
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
             .then(r => r.json()).then(d => {
-                const addr = (d.address.road || "") + " " + (d.address.house_number || d.address.suburb || "");
-                document.getElementById('p-address').value = addr || "Dirección no encontrada";
+                document.getElementById('p-address').value = (d.address.road || "") + " " + (d.address.house_number || "");
             });
     }
 
@@ -174,73 +168,51 @@
         else document.getElementById('btn-confirm').style.display = 'none';
     }
 
-    function openForm() {
-        showView('form');
-    }
-
-    function cancelAdd() {
-        if(tempM) map.removeLayer(tempM);
-        document.getElementById('btn-confirm').style.display = 'none';
-        showView('map');
-    }
+    function openForm() { showView('form'); }
+    function cancelAdd() { if(tempM) map.removeLayer(tempM); document.getElementById('btn-confirm').style.display = 'none'; showView('map'); }
 
     function saveProp() {
         const title = document.getElementById('p-title').value;
         const price = document.getElementById('p-price').value;
         const wa = document.getElementById('p-wa').value;
-        if(!title || !price || !wa) return alert("Por favor, completa los campos.");
-
+        if(!title || !price || !wa) return alert("Faltan datos");
         db.push({
-            title, price, wa, 
-            address: document.getElementById('p-address').value,
-            type: document.getElementById('p-type').value,
-            op: document.getElementById('p-op').value,
-            img: document.getElementById('p-img').value,
-            lat: latC, lng: lngC
-        }).then(() => { 
-            alert("¡Propiedad publicada con éxito!"); 
-            cancelAdd(); 
-        });
+            title, price, wa, address: document.getElementById('p-address').value,
+            type: document.getElementById('p-type').value, op: document.getElementById('p-op').value,
+            img: document.getElementById('p-img').value, lat: latC, lng: lngC
+        }).then(() => { alert("¡Publicado!"); cancelAdd(); });
     }
 
     function loadData() {
         db.on('value', snap => {
-            const data = snap.val();
-            const list = data ? Object.values(data) : [];
+            const list = snap.val() ? Object.values(snap.val()) : [];
+            const tF = document.getElementById('f-type').value;
+            const oF = document.getElementById('f-op').value;
             map.eachLayer(l => { if(l instanceof L.Marker && l !== tempM) map.removeLayer(l); });
-
             let html = "";
             list.reverse().forEach((p, i) => {
-                // Publicidad cada 3
-                if(i > 0 && i % 4 === 0) {
-                    html += `<div class="bg-amber-50 border-2 border-dashed border-amber-300 p-4 rounded-3xl"><p class="text-[8px] font-black text-amber-600 mb-1 uppercase">Sponsor Destacado</p><h4 class="font-bold text-sm">INMOBILIARIA TANDIL</h4><p class="text-[10px]">Las mejores tasaciones de la ciudad.</p></div>`;
-                }
+                if(tF !== 'todos' && p.type !== tF) return;
+                if(oF !== 'todos' && p.op !== oF) return;
 
                 var m = L.marker([p.lat, p.lng]).addTo(map);
+                setTimeout(() => { if(m.getElement()) m.getElement().classList.add('pin-' + p.type); }, 100);
                 
-                // Color por tipo
-                var filter = "hue-rotate(0deg)"; 
-                if(p.type === 'depto') filter = "hue-rotate(145deg)";
-                if(p.type === 'terreno') filter = "grayscale(1) brightness(0.3)";
-                m.getElement().style.filter = filter;
-
-                // Popup para ver sin "agregar"
-                m.bindPopup(`<div style="width:150px"><p class="font-black text-indigo-600 uppercase text-[10px] mb-1">${p.title}</p><p class="font-bold mb-2 text-sm">U$D ${p.price}</p><button onclick="triggerConsult('${p.wa}')" class="bg-indigo-600 text-white w-full py-2 rounded-lg text-[10px] font-bold">CONSULTAR</button></div>`);
+                m.bindPopup(`<div style="width:130px"><p class="font-black text-indigo-600 text-[10px] uppercase">${p.title}</p><p class="font-bold text-sm mb-2">U$D ${p.price}</p><button onclick="triggerConsult('${p.wa}')" class="bg-indigo-600 text-white w-full py-2 rounded-lg text-[10px] font-bold">WHATSAPP</button></div>`);
 
                 html += `
                 <div class="bg-white rounded-[2rem] p-3 shadow-sm border border-slate-100">
-                    <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=500'" class="w-full h-44 object-cover rounded-3xl mb-3">
+                    <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=500'" class="w-full h-44 object-cover rounded-3xl mb-3">
                     <div class="px-2">
                         <div class="flex justify-between items-center mb-1">
-                            <h4 class="font-black text-sm uppercase text-slate-700 truncate w-2/3">${p.title}</h4>
-                            <span class="text-[9px] font-black bg-slate-100 px-2 py-1 rounded-full uppercase text-slate-500">${p.type}</span>
+                            <h4 class="font-black text-sm uppercase text-slate-700 truncate">${p.title}</h4>
+                            <span class="text-[9px] font-black ${p.type === 'terreno' ? 'bg-green-100 text-green-600' : 'bg-indigo-100 text-indigo-600'} px-2 py-1 rounded-full uppercase">${p.type}</span>
                         </div>
                         <p class="text-2xl font-black text-indigo-600 mb-4">U$D ${p.price}</p>
-                        <button onclick="triggerConsult('${p.wa}')" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg">Consultar ahora</button>
+                        <button onclick="triggerConsult('${p.wa}')" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-lg">Consultar ahora</button>
                     </div>
                 </div>`;
             });
-            document.getElementById('l-container').innerHTML = html;
+            document.getElementById('l-container').innerHTML = html || "<p class='text-center py-10'>No hay propiedades.</p>";
         });
     }
     loadData();
