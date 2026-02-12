@@ -2,112 +2,114 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TandilProp v11</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TandilProp v12.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #fff; }
-        .app-container { display: flex; flex-direction: column; height: 100vh; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; overflow: hidden; background: #fff; font-family: sans-serif; }
         
-        header { height: 110px; background: #fff; border-bottom: 2px solid #eee; padding: 10px; z-index: 9999; }
-        .main-content { flex: 1; position: relative; overflow: hidden; }
-        
-        .view { width: 100%; height: 100%; display: none; position: absolute; inset: 0; background: #fff; }
+        .ui-layer { position: fixed; inset: 0; display: flex; flex-direction: column; pointer-events: none; z-index: 9999; }
+        header { pointer-events: auto; background: white; border-bottom: 2px solid #eee; padding: 10px; height: 110px; }
+        .content-area { flex: 1; position: relative; }
+        nav { pointer-events: auto; background: white; border-top: 2px solid #eee; height: 80px; display: flex; padding-bottom: env(safe-area-inset-bottom); }
+
+        .map-layer { position: fixed; inset: 0; z-index: 1; pointer-events: auto; }
+        #map { width: 100%; height: 100%; }
+
+        .view { pointer-events: auto; position: absolute; inset: 0; background: white; display: none; z-index: 500; }
         .view.active { display: block; }
-        #map { width: 100%; height: 100%; z-index: 1; }
 
-        /* NAVEGACION BLINDADA */
-        nav { height: 80px; background: #fff; border-top: 2px solid #eee; display: flex; position: relative; z-index: 9999; padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; color: #64748b; border: none; background: none; }
-        .nav-item.active { color: #4f46e5; }
-
-        /* BOTÓN MAS (FUERA DEL MAPA) */
-        .btn-plus-container { position: relative; width: 70px; height: 100%; }
+        .plus-box { position: absolute; top: -35px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; pointer-events: auto; }
         .plus-btn { 
-            position: absolute; top: -35px; left: 50%; transform: translateX(-50%);
-            width: 65px; height: 65px; background: #4f46e5; color: white;
-            border-radius: 22px; font-size: 40px; border: 5px solid white;
-            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4); display: flex;
-            align-items: center; justify-content: center; z-index: 10000;
+            width: 65px; height: 65px; background: #4f46e5; color: white; 
+            border-radius: 22px; font-size: 40px; border: 5px solid white; 
+            display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2); cursor: pointer;
         }
 
-        /* FILTROS DE COLORES PARA PINES */
-        .pin-casa { filter: hue-rotate(0deg); } /* Azul standard */
-        .pin-alquiler { filter: hue-rotate(140deg) saturate(2); } /* Rojo */
-        .pin-terreno { filter: grayscale(1) brightness(0.5); } /* Negro */
-        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.2); } /* Dorado/Amarillo */
+        /* FILTROS DE COLORES REVISADOS */
+        .pin-azul { filter: hue-rotate(0deg); } /* Casas */
+        .pin-rojo { filter: hue-rotate(140deg) saturate(2); } /* Deptos */
+        .pin-negro { filter: grayscale(1) brightness(0.3); } /* Terrenos */
+        .pin-nuevo { filter: hue-rotate(240deg) brightness(1.5); } /* Dorado */
 
-        #floating-confirm {
-            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
-            z-index: 5000; background: #4f46e5; color: white; padding: 15px 30px;
-            border-radius: 50px; font-weight: 900; display: none; border: 2px solid white;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-transform: uppercase; font-size: 12px;
+        #confirm-btn { 
+            pointer-events: auto; position: absolute; bottom: 30px; left: 50%; 
+            transform: translateX(-50%); background: #4f46e5; color: white; 
+            padding: 15px 30px; border-radius: 50px; font-weight: 900; 
+            display: none; box-shadow: 0 10px 20px rgba(0,0,0,0.3); z-index: 1000;
+            border: 2px solid white; font-size: 12px;
         }
+
+        .nav-item { flex: 1; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #94a3b8; }
+        .nav-item.active { color: #4f46e5; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
-    <header>
-        <div class="flex justify-between items-center mb-2">
-            <h1 class="text-xl font-black text-indigo-600 italic uppercase">TandilProp</h1>
-            <button onclick="location.reload()" class="p-2 text-lg">🔄</button>
-        </div>
-        <div class="flex gap-2">
-            <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-100 rounded-lg text-[10px] font-bold">
-                <option value="todos">TIPO: TODOS</option>
-                <option value="casa">🏠 CASAS</option>
-                <option value="depto">🏢 DEPTOS/ALQUILER</option>
-                <option value="terreno">🌳 TERRENOS</option>
-            </select>
-            <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold">
-                <option value="todos">OPERACION: TODAS</option>
-                <option value="venta">VENTA</option>
-                <option value="alquiler">ALQUILER</option>
-            </select>
-        </div>
-    </header>
-
-    <div class="main-content">
-        <div id="v-map" class="view active">
-            <div id="map"></div>
-            <button id="floating-confirm" onclick="openAddForm()">Confirmar Ubicación 📍</button>
-        </div>
-
-        <div id="v-list" class="view overflow-y-auto p-4 bg-slate-50">
-            <div id="l-container" class="space-y-4 pb-12"></div>
-        </div>
-
-        <div id="v-form" class="view overflow-y-auto p-6">
-            <h2 class="text-2xl font-black mb-6 uppercase italic">Publicar Propiedad</h2>
-            <div class="space-y-4 pb-20">
-                <input type="text" id="p-title" placeholder="Título (Ej: Casa 3 dorm.)" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold uppercase"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
-                </div>
-                <input type="number" id="p-price" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <input type="text" id="p-address" placeholder="Dirección aproximada" class="w-full p-4 bg-white border-2 border-indigo-100 rounded-xl font-bold">
-                <input type="text" id="p-wa" placeholder="WhatsApp (249...)" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none">
-                <input type="text" id="p-img" placeholder="Link de Foto (URL)" class="w-full p-4 bg-slate-100 rounded-xl border-none">
-                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Subir ahora</button>
-                <button onclick="closeForm()" class="w-full py-2 text-slate-400 font-bold uppercase text-xs">Volver al mapa</button>
-            </div>
-        </div>
+    <div class="map-layer">
+        <div id="map"></div>
     </div>
 
-    <nav>
-        <button class="nav-item active" id="btn-map" onclick="setView('map')">MAPA</button>
-        <div class="btn-plus-container">
-            <div class="plus-btn" onclick="triggerPlus(event)">+</div>
+    <div class="ui-layer">
+        <header>
+            <div class="flex justify-between items-center mb-1">
+                <h1 class="text-xl font-black text-indigo-600 italic uppercase">TandilProp</h1>
+                <button onclick="location.reload()" class="p-1">🔄</button>
+            </div>
+            <div class="flex gap-2">
+                <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-100 rounded-lg text-[10px] font-bold outline-none">
+                    <option value="todos">TIPO: TODOS</option>
+                    <option value="casa">🏠 CASAS</option>
+                    <option value="depto">🏢 DEPTOS</option>
+                    <option value="terreno">🌳 TERRENOS</option>
+                </select>
+                <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-bold outline-none">
+                    <option value="todos">OPERACION: TODAS</option>
+                    <option value="venta">VENTA</option>
+                    <option value="alquiler">ALQUILER</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <button id="confirm-btn" onclick="openForm()">CONFIRMAR UBICACIÓN AQUÍ 📍</button>
+
+            <div id="v-list" class="view overflow-y-auto p-4 bg-slate-50">
+                <div id="l-container" class="space-y-4 pb-20"></div>
+            </div>
+
+            <div id="v-form" class="view overflow-y-auto p-6">
+                <h2 class="text-2xl font-black mb-4 italic uppercase">Publicar</h2>
+                <div class="space-y-4 pb-20">
+                    <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
+                    <div class="flex gap-2">
+                        <select id="p-type" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold uppercase"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+                        <select id="p-op" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+                    </div>
+                    <input type="number" id="p-price" placeholder="Precio USD" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
+                    <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-white border-2 border-indigo-100 rounded-xl font-bold outline-none">
+                    <input type="text" id="p-wa" placeholder="WhatsApp (249...)" class="w-full p-4 bg-slate-100 rounded-xl font-bold border-none outline-none">
+                    <input type="text" id="p-img" placeholder="Link de Foto" class="w-full p-4 bg-slate-100 rounded-xl border-none outline-none">
+                    <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Publicar Ahora</button>
+                    <button onclick="closeForm()" class="w-full py-2 text-slate-400 font-bold uppercase text-xs">Cancelar</button>
+                </div>
+            </div>
         </div>
-        <button class="nav-item" id="btn-list" onclick="setView('list')">LISTA</button>
-    </nav>
-</div>
+
+        <nav>
+            <button class="nav-item active" id="btn-map" onclick="showMap()">MAPA</button>
+            <div class="plus-box">
+                <div class="plus-btn" onclick="clickPlus(event)">+</div>
+            </div>
+            <button class="nav-item" id="btn-list" onclick="showList()">LISTA</button>
+        </nav>
+    </div>
 
 <script>
     const firebaseConfig = {
@@ -119,119 +121,4 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('tandil_vfinal_fix');
 
-    var map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-
-    var latC, lngC, tempMarker;
-
-    // EVENTO: TOCAR EL MAPA
-    map.on('click', function(e) {
-        dropPin(e.latlng.lat, e.latlng.lng);
-    });
-
-    // EVENTO: BOTÓN (+) PROTEGIDO
-    function triggerPlus(e) {
-        if(e) e.stopPropagation(); // Evita que el mapa reciba el clic
-        setView('map');
-        const center = map.getCenter();
-        dropPin(center.lat, center.lng);
-        map.setView(center, 16);
-    }
-
-    function dropPin(lat, lng) {
-        if(tempMarker) map.removeLayer(tempMarker);
-        latC = lat; lngC = lng;
-        tempMarker = L.marker([lat, lng], {draggable: true}).addTo(map);
-        tempMarker.getElement().classList.add('pin-nuevo'); // Pin Dorado
-        document.getElementById('floating-confirm').style.display = 'block';
-        
-        tempMarker.on('dragend', function(ev) {
-            latC = ev.target.getLatLng().lat;
-            lngC = ev.target.getLatLng().lng;
-        });
-    }
-
-    function setView(v) {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('v-' + (v === 'form' ? 'form' : v)).classList.add('active');
-        if(v === 'map' || v === 'list') document.getElementById('btn-' + v).classList.add('active');
-        if(v === 'map') setTimeout(() => map.invalidateSize(), 300);
-    }
-
-    function openAddForm() {
-        setView('form');
-        document.getElementById('floating-confirm').style.display = 'none';
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latC}&lon=${lngC}`)
-            .then(r => r.json()).then(d => {
-                document.getElementById('p-address').value = (d.address.road || "") + " " + (d.address.house_number || "");
-            });
-    }
-
-    function closeForm() {
-        if(tempMarker) map.removeLayer(tempMarker);
-        setView('map');
-    }
-
-    function saveProp() {
-        const title = document.getElementById('p-title').value;
-        const price = document.getElementById('p-price').value;
-        const wa = document.getElementById('p-wa').value;
-        if(!title || !price || !wa) return alert("Completa los datos!");
-
-        db.push({
-            title, price, wa, address: document.getElementById('p-address').value,
-            type: document.getElementById('p-type').value,
-            op: document.getElementById('p-op').value,
-            img: document.getElementById('p-img').value,
-            lat: latC, lng: lngC
-        }).then(() => { alert("¡Éxito!"); closeForm(); });
-    }
-
-    function loadData() {
-        db.on('value', snap => {
-            const data = snap.val();
-            const list = data ? Object.values(data) : [];
-            const tF = document.getElementById('f-type').value;
-            const oF = document.getElementById('f-op').value;
-            
-            map.eachLayer(l => { if(l instanceof L.Marker && l !== tempMarker) map.removeLayer(l); });
-
-            let html = "";
-            list.reverse().forEach(p => {
-                if(tF !== 'todos' && p.type !== tF) return;
-                if(oF !== 'todos' && p.op !== oF) return;
-
-                // Crear marcador con color según tipo
-                var m = L.marker([p.lat, p.lng]).addTo(map);
-                var pinClass = 'pin-casa';
-                if(p.type === 'depto' || p.op === 'alquiler') pinClass = 'pin-alquiler'; // Rojo
-                if(p.type === 'terreno') pinClass = 'pin-terreno'; // Negro
-                
-                m.getElement().classList.add(pinClass);
-                
-                m.bindPopup(`
-                    <div style="width:180px">
-                        <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200'" style="width:100%;height:90px;object-fit:cover;border-radius:8px">
-                        <h4 style="font-weight:900;margin:5px 0;font-size:12px">${p.title.toUpperCase()}</h4>
-                        <p style="color:#4f46e5;font-weight:900;margin:0">U$D ${p.price}</p>
-                        <button onclick="window.open('https://wa.me/${p.wa}')" style="width:100%;background:#000;color:#fff;padding:8px;border-radius:8px;margin-top:5px;font-size:10px;font-weight:bold">WHATSAPP</button>
-                    </div>
-                `);
-
-                html += `
-                    <div class="bg-white rounded-3xl p-3 shadow-md border border-slate-100">
-                        <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400'" class="w-full h-40 object-cover rounded-2xl mb-2">
-                        <h4 class="font-black text-sm uppercase">${p.title}</h4>
-                        <p class="text-indigo-600 font-black text-xl">U$D ${p.price}</p>
-                        <p class="text-slate-400 text-[9px] mb-2 uppercase">📍 ${p.address || ''}</p>
-                        <button onclick="window.open('https://wa.me/${p.wa}')" class="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-xs uppercase">Contactar</button>
-                    </div>`;
-            });
-            document.getElementById('l-container').innerHTML = html;
-        });
-    }
-    loadData();
-</script>
-</body>
-</html>
+    var map = L.map('map', {zoomControl: false, attributionControl:
