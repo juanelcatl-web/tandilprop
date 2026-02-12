@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp Elite v7</title>
+    <title>TandilProp Elite v8</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -14,19 +14,30 @@
         body, html { height: 100%; width: 100%; overflow: hidden; background: white; position: fixed; font-family: system-ui, sans-serif; }
         .app-shell { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
         header { flex-shrink: 0; background: white; border-bottom: 1px solid #eee; padding: 10px 15px; z-index: 1000; }
-        .main-content { flex-grow: 1; position: relative; width: 100%; }
+        .main-content { flex-grow: 1; position: relative; width: 100%; height: 100%; }
         .view { position: absolute; inset: 0; display: none; background: white; width: 100%; height: 100%; }
         .view.active { display: block; z-index: 10; }
         
-        /* FIX: Mapa pantalla completa real */
-        #map { position: absolute; top: 0; bottom: 0; left: 0; right: 0; width: 100% !important; height: 100% !important; }
+        #map { position: absolute; inset: 0; width: 100% !important; height: 100% !important; z-index: 1; }
         
-        nav { height: 75px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 2000; }
+        nav { height: 75px; background: white; border-top: 1px solid #eee; display: flex; justify-content: space-around; align-items: center; padding-bottom: env(safe-area-inset-bottom); z-index: 5000; position: relative; }
         .nav-btn { flex: 1; border: none; background: none; font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; }
         .nav-btn.active { color: #4f46e5; }
-        .plus-circle { background: #4f46e5; color: white; width: 58px; height: 58px; border-radius: 20px; font-size: 32px; display: flex; align-items: center; justify-content: center; margin-top: -40px; border: 4px solid white; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3); cursor: pointer; z-index: 3000; }
         
-        #confirm-loc-btn { display: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 4000; }
+        /* Botón MAS mejorado para que no falle */
+        .plus-circle { 
+            background: #4f46e5; color: white; width: 60px; height: 60px; 
+            border-radius: 20px; font-size: 35px; display: flex; 
+            align-items: center; justify-content: center; margin-top: -45px; 
+            border: 4px solid white; box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4); 
+            cursor: pointer; z-index: 6000; position: relative;
+        }
+        
+        #confirm-loc-btn { 
+            display: none; position: absolute; bottom: 30px; 
+            left: 50%; transform: translateX(-50%); z-index: 4500; 
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -52,36 +63,38 @@
     <div class="main-content">
         <div id="v-map" class="view active">
             <div id="map"></div>
-            <button id="confirm-loc-btn" onclick="openForm()" class="bg-indigo-600 text-white px-6 py-3 rounded-full font-black shadow-2xl text-xs uppercase animate-bounce">Confirmar Ubicación aquí 📍</button>
+            <button id="confirm-loc-btn" onclick="openForm()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black shadow-2xl text-xs uppercase tracking-widest border-2 border-white">Confirmar Ubicación 📍</button>
         </div>
         
         <div id="v-list" class="view p-4 overflow-y-auto bg-slate-50"><div id="l-container" class="space-y-4 pb-24"></div></div>
         
         <div id="v-add" class="view p-6 overflow-y-auto bg-white">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black italic uppercase">Publicar</h2>
-                <button onclick="cancelAdd()" class="text-slate-400 font-bold text-[10px]">CANCELAR</button>
+                <h2 class="text-2xl font-black italic uppercase">Nueva Publicación</h2>
+                <button onclick="cancelAdd()" class="text-slate-400 font-bold text-[10px] bg-slate-100 px-3 py-2 rounded-lg">CANCELAR</button>
             </div>
             <div class="space-y-4 pb-28">
-                <div id="geo-status" class="bg-indigo-600 text-white p-4 rounded-2xl text-[10px] font-bold uppercase">Detectando...</div>
-                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none">
-                <div class="flex gap-2">
-                    <select id="p-type" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
-                    <select id="p-op" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs text-indigo-600"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+                <div id="geo-status" class="bg-slate-900 text-indigo-400 p-4 rounded-2xl text-[10px] font-black uppercase tracking-tighter">
+                    Esperando coordenadas...
                 </div>
-                <input type="number" id="p-price" placeholder="Precio en USD" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none">
-                <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-white border-2 border-indigo-100 rounded-2xl font-bold text-xs">
-                <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494123456)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none">
-                <input type="text" id="p-img" placeholder="Link Foto" class="w-full p-4 bg-slate-50 rounded-2xl border-none">
-                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black uppercase shadow-xl mt-4">Confirmar y Publicar</button>
+                <input type="text" id="p-title" placeholder="Título (Ej: Casa zona Centro)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none shadow-inner">
+                <div class="flex gap-2">
+                    <select id="p-type" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs uppercase"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+                    <select id="p-op" class="flex-1 p-4 bg-slate-50 rounded-2xl font-bold text-xs text-indigo-600 uppercase"><option value="venta">Venta</option><option value="alquiler">Alquiler</option></select>
+                </div>
+                <input type="number" id="p-price" placeholder="Precio en USD" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none shadow-inner">
+                <input type="text" id="p-address" placeholder="Dirección / Altura" class="w-full p-4 bg-indigo-50 border-2 border-indigo-100 rounded-2xl font-bold text-xs outline-none">
+                <input type="text" id="p-wa" placeholder="WhatsApp (2494...)" class="w-full p-4 bg-slate-50 rounded-2xl font-bold border-none outline-none shadow-inner">
+                <input type="text" id="p-img" placeholder="Link de la Foto" class="w-full p-4 bg-slate-50 rounded-2xl border-none outline-none shadow-inner">
+                <button onclick="saveProp()" class="w-full bg-indigo-600 text-white py-5 rounded-[2rem] font-black uppercase shadow-xl mt-4 active:scale-95 transition-transform">Publicar Ahora 🚀</button>
             </div>
         </div>
     </div>
 
     <nav>
         <button onclick="changeView('map')" id="n-map" class="nav-btn active">Mapa</button>
-        <div class="plus-circle" onclick="startManualAdd()">+</div>
-        <button onclick="changeView('list')" id="n-list" class="nav-btn">Catálogo</button>
+        <div class="plus-circle" onclick="startManualAdd(event)">+</div>
+        <button onclick="changeView('list')" id="n-list" class="nav-btn">Lista</button>
     </nav>
 </div>
 
@@ -100,13 +113,14 @@
 
     let latC, lngC, tempMarker;
 
-    // AL TOCAR MAPA: PASO 1 (Solo poner pin)
+    // AL TOCAR MAPA (Solo pone el pin)
     map.on('click', function(e) {
         placeTempMarker(e.latlng.lat, e.latlng.lng);
     });
 
-    // BOTÓN (+): PASO 1 (Pin en el centro)
-    function startManualAdd() {
+    // BOTÓN (+) CORREGIDO: Evita la interferencia del mapa
+    function startManualAdd(e) {
+        if(e) e.stopPropagation(); // Detiene el clic para que no toque el mapa abajo
         const center = map.getCenter();
         placeTempMarker(center.lat, center.lng);
         map.setView(center, 16);
@@ -116,106 +130,4 @@
         if(tempMarker) map.removeLayer(tempMarker);
         latC = lat; lngC = lng;
         
-        tempMarker = L.marker([lat, lng], {draggable: true, zIndexOffset: 1000}).addTo(map);
-        document.getElementById('confirm-loc-btn').style.display = 'block';
-        
-        // El pin avisa que si lo tocas de nuevo o arrastras, confirmas
-        tempMarker.bindTooltip("Toca el pin para confirmar ubicación", {permanent: true, direction: 'top'}).openTooltip();
-        
-        tempMarker.on('click', () => openForm());
-        tempMarker.on('dragend', function(e) {
-            let p = e.target.getLatLng();
-            latC = p.lat; lngC = p.lng;
-        });
-    }
-
-    async function openForm() {
-        changeView('add');
-        document.getElementById('confirm-loc-btn').style.display = 'none';
-        updateAddress(latC, lngC);
-    }
-
-    function cancelAdd() {
-        if(tempMarker) map.removeLayer(tempMarker);
-        document.getElementById('confirm-loc-btn').style.display = 'none';
-        changeView('map');
-    }
-
-    async function updateAddress(lat, lng) {
-        document.getElementById('geo-status').innerText = "📍 BUSCANDO DIRECCIÓN...";
-        try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await res.json();
-            const street = data.address.road || "Calle de Tandil";
-            const num = data.address.house_number || "";
-            document.getElementById('p-address').value = `${street} ${num}`.trim();
-            document.getElementById('geo-status').innerText = "📍 UBICACIÓN LISTA";
-        } catch(e) { document.getElementById('geo-status').innerText = "📍 UBICACIÓN MANUAL"; }
-    }
-
-    function changeView(v) {
-        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById('v-' + v).classList.add('active');
-        if(v !== 'add') document.getElementById('n-' + v).classList.add('active');
-        if(v === 'map') setTimeout(() => { map.invalidateSize(); }, 400);
-    }
-
-    function saveProp() {
-        const title = document.getElementById('p-title').value;
-        const price = document.getElementById('p-price').value;
-        const wa = document.getElementById('p-wa').value;
-        if(!title || !price || !wa) return alert("Faltan datos");
-
-        db.push({
-            title, price, wa, address: document.getElementById('p-address').value,
-            type: document.getElementById('p-type').value,
-            op: document.getElementById('p-op').value,
-            img: document.getElementById('p-img').value,
-            lat: latC, lng: lngC
-        }).then(() => { 
-            alert("✅ ¡Publicado!"); 
-            cancelAdd();
-        });
-    }
-
-    function applyData() {
-        db.on('value', snap => {
-            const data = snap.val();
-            const list = data ? Object.values(data) : [];
-            const tF = document.getElementById('f-type').value;
-            const oF = document.getElementById('f-op').value;
-            const filtered = list.filter(p => (tF === 'todos' || p.type === tF) && (oF === 'todos' || p.op === oF));
-
-            map.eachLayer(l => { if(l instanceof L.Marker && l !== tempMarker) map.removeLayer(l) });
-            
-            filtered.forEach(p => {
-                const marker = L.marker([p.lat, p.lng]).addTo(map);
-                if(p.type === 'terreno') marker.getElement().style.filter = "hue-rotate(120deg)";
-                marker.bindPopup(`
-                    <div style="width:200px">
-                        <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=200'" style="width:100%;height:100px;object-fit:cover;border-radius:10px">
-                        <h4 style="margin:5px 0;font-size:12px;text-transform:uppercase">${p.title}</h4>
-                        <p style="color:#4f46e5;font-weight:bold;margin:0">U$D ${p.price}</p>
-                        <button onclick="window.open('https://wa.me/${p.wa}')" style="width:100%;background:#111;color:#fff;padding:8px;border-radius:8px;margin-top:5px;font-size:10px;text-transform:uppercase">WhatsApp</button>
-                    </div>
-                `);
-            });
-
-            document.getElementById('l-container').innerHTML = filtered.map(p => `
-                <div class="bg-white rounded-[2rem] overflow-hidden border p-3 shadow-lg">
-                    <img src="${p.img}" onerror="this.src='https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400'" class="w-full h-44 object-cover rounded-[1.8rem] mb-3">
-                    <div class="px-3">
-                        <h4 class="font-black text-sm uppercase">${p.title}</h4>
-                        <p class="text-indigo-600 font-black text-2xl">U$D ${p.price}</p>
-                        <p class="text-slate-400 text-[9px] font-bold mb-3 uppercase">📍 ${p.address || ''}</p>
-                        <button onclick="window.open('https://wa.me/${p.wa}')" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px]">Consultar</button>
-                    </div>
-                </div>
-            `).reverse().join('');
-        });
-    }
-    applyData();
-</script>
-</body>
-</html>
+        // Pin especial Dorado para diferenciar
