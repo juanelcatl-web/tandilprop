@@ -17,7 +17,6 @@
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         body, html { margin: 0; padding: 0; min-height: 100%; width: 100%; background: #fff; font-family: 'Inter', sans-serif; }
 
-        /* Estructura */
         #landing-page { display: block; background: #fff; overflow-x: hidden; }
         .app-shell { 
             display: none; flex-direction: column; 
@@ -37,7 +36,6 @@
         .nav-item.active { color: #4f46e5; }
         .nav-item span { font-size: 22px; margin-bottom: 2px; }
 
-        /* Pines Colores */
         .pin-casa { filter: hue-rotate(190deg) brightness(0.9); }
         .pin-depto { filter: hue-rotate(15deg) saturate(3); }
         .pin-terreno { filter: hue-rotate(80deg) brightness(0.8); }
@@ -155,7 +153,7 @@
                 
                 <div class="flex gap-2">
                     <input type="number" id="p-price" placeholder="U$D Precio" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
-                    <input type="text" id="p-wa" placeholder="WhatsApp (249...)" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
+                    <input type="text" id="p-wa" placeholder="WhatsApp" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
                 </div>
 
                 <button onclick="saveProp()" id="btn-save" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all">Confirmar Publicación</button>
@@ -171,7 +169,6 @@
 </div>
 
 <script>
-    // NAVEGACIÓN
     function startApp() {
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
@@ -193,7 +190,6 @@
         else document.getElementById('btn-confirm').style.display = 'none';
     }
 
-    // FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
         authDomain: "tandilprop-56ec1.firebaseapp.com",
@@ -203,7 +199,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('tandil_vfinal_fix');
 
-    // MAPA
     var map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -216,7 +211,6 @@
         tempM = L.marker([latC, lngC], {draggable: true}).addTo(map);
         document.getElementById('btn-confirm').style.display = 'block';
 
-        // BUSCAR DIRECCIÓN AUTOMÁTICA
         fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latC}&lon=${lngC}`)
             .then(r => r.json())
             .then(data => {
@@ -238,7 +232,7 @@
         const address = document.getElementById('p-address').value;
         if(!title || !price || !wa) return alert("Completa los campos obligatorios");
         
-        btn.disabled = true; btn.innerText = "Subiendo datos...";
+        btn.disabled = true; btn.innerText = "Subiendo...";
         let imgData = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500";
         
         const sendData = (finalImg) => {
@@ -247,7 +241,7 @@
                 type: document.getElementById('p-type').value,
                 op: document.getElementById('p-op').value,
                 img: finalImg, lat: latC, lng: lngC
-            }).then(() => { alert("¡Publicado con éxito!"); location.reload(); });
+            }).then(() => { alert("¡Publicado!"); location.reload(); });
         };
 
         if(fileInput.files[0]) {
@@ -259,31 +253,49 @@
         }
     }
 
+    function deleteProp(id) {
+        const pin = prompt("PIN de administrador para borrar:");
+        if (pin === "2026") {
+            if (confirm("¿Eliminar definitivamente?")) {
+                db.child(id).remove().then(() => alert("Eliminado."));
+            }
+        } else {
+            alert("PIN incorrecto.");
+        }
+    }
+
     function loadData() {
         db.on('value', snap => {
-            const list = snap.val() ? Object.values(snap.val()) : [];
+            const data = snap.val();
             const tF = document.getElementById('f-type').value;
             const oF = document.getElementById('f-op').value;
             map.eachLayer(l => { if(l instanceof L.Marker && l !== tempM) map.removeLayer(l); });
+            
             let html = "";
-            list.reverse().forEach(p => {
-                if(tF !== 'todos' && p.type !== tF) return;
-                if(oF !== 'todos' && p.op !== oF) return;
-                var m = L.marker([p.lat, p.lng]).addTo(map);
-                if(m.getElement()) m.getElement().classList.add('pin-' + p.type);
-                
-                html += `<div class="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-100">
-                    <img src="${p.img}" class="w-full h-44 object-cover rounded-[1.5rem] mb-3">
-                    <h4 class="font-black text-slate-800 uppercase text-xs mb-1 truncate">${p.title}</h4>
-                    <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">${p.address || ''}</p>
-                    <p class="text-2xl font-black text-indigo-600 mb-3 tracking-tighter">U$D ${p.price}</p>
-                    <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-xl text-center">Contactar</a>
-                </div>`;
-            });
+            if (data) {
+                Object.keys(data).reverse().forEach(key => {
+                    const p = data[key];
+                    if(tF !== 'todos' && p.type !== tF) return;
+                    if(oF !== 'todos' && p.op !== oF) return;
+
+                    var m = L.marker([p.lat, p.lng]).addTo(map);
+                    if(m.getElement()) m.getElement().classList.add('pin-' + p.type);
+                    
+                    html += `
+                    <div class="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-100 relative">
+                        <button onclick="deleteProp('${key}')" class="absolute top-6 right-6 bg-red-100 text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-sm z-50">🗑️</button>
+                        <img src="${p.img}" class="w-full h-44 object-cover rounded-[1.5rem] mb-3">
+                        <h4 class="font-black text-slate-800 uppercase text-xs mb-1 truncate">${p.title}</h4>
+                        <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">${p.address || ''}</p>
+                        <p class="text-2xl font-black text-indigo-600 mb-3 tracking-tighter">U$D ${p.price} <span class="text-[10px] text-indigo-300 ml-1">${p.op}</span></p>
+                        <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-xl text-center">Contactar</a>
+                    </div>`;
+                });
+            }
             document.getElementById('l-container').innerHTML = html || "<p class='text-center py-20 font-bold opacity-30'>Sin anuncios activos</p>";
         });
     }
     loadData();
 </script>
 </body>
-                            </html>
+</html>
