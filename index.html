@@ -5,7 +5,7 @@
     <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp | Mercado Inmobiliario y Datos de Real Estate</title>
+    <title>TandilProp | Mercado Inmobiliario</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -14,13 +14,24 @@
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; min-height: 100vh; width: 100vw; background: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100vw; background: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         
-        /* Capas Principal */
+        /* Capas */
         #landing-page { display: block; background: white; width: 100%; }
-        .app-shell { display: none; flex-direction: column; height: 100vh; width: 100%; position: fixed; inset: 0; z-index: 1000; background: white; }
+        
+        /* FIX: El contenedor de la APP ahora es un Flex Col que ocupa el 100% real */
+        .app-shell { 
+            display: none; 
+            flex-direction: column; 
+            height: 100vh; 
+            width: 100%; 
+            position: fixed; 
+            inset: 0; 
+            z-index: 1000; 
+            background: white; 
+        }
 
         .hero-section { background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1449156001935-52614a37d6b5?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white; }
         
@@ -29,13 +40,31 @@
         .pin-depto { filter: hue-rotate(15deg) saturate(3); }
         .pin-terreno { filter: hue-rotate(80deg) brightness(0.8); }
 
-        header { height: 110px; border-bottom: 2px solid #f1f5f9; padding: 12px; flex-shrink: 0; }
-        #map { width: 100%; height: 100%; z-index: 5; }
+        /* Estructura App */
+        header { height: 110px; border-bottom: 2px solid #f1f5f9; padding: 12px; flex-shrink: 0; background: white; z-index: 1010; }
+        
+        .main-content { 
+            flex: 1; 
+            position: relative; 
+            overflow: hidden; /* Esto evita que el mapa se escape */
+            background: #f8fafc; 
+        }
+        
+        #map { width: 100%; height: 100%; }
         
         .view { position: absolute; inset: 0; background: white; z-index: 10; display: none; overflow-y: auto; }
         .view.active { display: block; }
 
-        nav { height: 90px; border-top: 2px solid #f1f5f9; display: flex; padding-bottom: env(safe-area-inset-bottom); flex-shrink: 0; }
+        /* FIX: Navegación siempre visible abajo */
+        nav { 
+            height: 80px; 
+            border-top: 2px solid #f1f5f9; 
+            display: flex; 
+            background: white; 
+            padding-bottom: env(safe-area-inset-bottom); 
+            flex-shrink: 0; 
+            z-index: 1010; 
+        }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-weight: 800; cursor:pointer; }
         .nav-item.active { color: #4f46e5; }
         
@@ -60,43 +89,29 @@
             <div class="stat-card">
                 <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Precio promedio m²</p>
                 <h3 class="text-3xl font-black text-indigo-600">U$D 1.250</h3>
-                <p class="text-[10px] text-emerald-500 font-bold mt-1">↑ 2.4% este mes</p>
             </div>
             <div class="stat-card">
                 <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Rentabilidad Anual</p>
                 <h3 class="text-3xl font-black text-indigo-600">4.8%</h3>
-                <p class="text-[10px] text-slate-500 font-bold mt-1">Promedio Barrio Centro</p>
             </div>
             <div class="stat-card">
                 <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Nuevos Loteos</p>
                 <h3 class="text-3xl font-black text-indigo-600">+15</h3>
-                <p class="text-[10px] text-slate-500 font-bold mt-1">Zonas de expansión</p>
             </div>
         </div>
-
-        <div class="grid md:grid-cols-2 gap-12 items-start">
-            <div class="prose prose-slate">
-                <h3 class="text-2xl font-black italic text-slate-800 uppercase mb-4 border-l-4 border-indigo-600 pl-4">Análisis de Mercado: Tandil 2026</h3>
-                <p class="text-slate-600 leading-relaxed mb-4">La ciudad de Tandil continúa su expansión hacia el sector sur y oeste, impulsada por la búsqueda de espacios verdes y la consolidación del polo tecnológico. Las propiedades en el faldeo de las sierras mantienen la valuación más alta por metro cuadrado, mientras que el microcentro se reconvierte hacia unidades de vivienda joven.</p>
-                <p class="text-slate-600 leading-relaxed">Nuestra red, en conjunto con <strong>UrbanGrowth</strong>, provee datos actualizados sobre la zonificación y factibilidad de servicios, un punto crítico al invertir en terrenos fuera del anillo urbano.</p>
-            </div>
-            <div class="space-y-4">
-                <div class="bg-indigo-600 p-8 rounded-[2rem] text-white">
-                    <h4 class="font-black text-xl mb-4 uppercase italic">¿Sos Dueño Directo?</h4>
-                    <p class="opacity-80 text-sm mb-6 font-light">Publicá tu casa, departamento o terreno de forma gratuita y conectá directamente por WhatsApp con interesados calificados.</p>
-                    <button onclick="startApp()" class="bg-white text-indigo-600 px-6 py-3 rounded-xl font-black text-xs uppercase shadow-lg">Publicar Ahora</button>
-                </div>
-            </div>
+        <div class="prose max-w-none text-center">
+             <h3 class="text-2xl font-black italic text-slate-800 uppercase mb-4">Análisis de Mercado Inmobiliario</h3>
+             <p class="text-slate-600 max-w-2xl mx-auto">Explora la geolocalización precisa de terrenos y casas en Tandil. Datos reales para inversores que buscan plusvalía en la zona de mayor crecimiento de Buenos Aires.</p>
         </div>
     </section>
 
     <footer class="bg-slate-900 py-12 text-center text-white/30 text-[10px] font-bold uppercase tracking-widest">
-        © 2026 TandilProp Inmobiliaria Digital | UrbanGrowth Network
+        © 2026 TandilProp | UrbanGrowth Network
     </footer>
 </div>
 
 <div class="app-shell" id="main-app">
-    <header class="bg-white">
+    <header>
         <div class="flex justify-between items-center mb-2">
             <h1 onclick="goBack()" class="text-2xl font-black text-indigo-600 italic tracking-tighter cursor-pointer">TANDILPROP</h1>
             <div class="bg-indigo-100 px-3 py-1 rounded-full text-[8px] font-black text-indigo-600 uppercase tracking-widest">Mapa Vivo</div>
@@ -104,9 +119,9 @@
         <div class="flex gap-2">
             <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border rounded-lg text-[10px] font-bold outline-none">
                 <option value="todos">TIPO: TODOS</option>
-                <option value="casa">🏠 CASAS (AZUL)</option>
-                <option value="depto">🏢 DEPTOS (AMARILLO)</option>
-                <option value="terreno">🌳 TERRENOS (VERDE)</option>
+                <option value="casa">🏠 CASAS</option>
+                <option value="depto">🏢 DEPTOS</option>
+                <option value="terreno">🌳 TERRENOS</option>
             </select>
             <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border rounded-lg text-[10px] font-bold outline-none">
                 <option value="todos">OP: TODAS</option>
@@ -119,7 +134,7 @@
     <div class="main-content">
         <div id="v-map" class="view active">
             <div id="map"></div>
-            <button id="btn-confirm" onclick="openForm()" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[1001] bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black border-2 border-white shadow-2xl hidden">📍 PUBLICAR AQUÍ</button>
+            <button id="btn-confirm" onclick="openForm()" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-[1001] bg-indigo-600 text-white px-8 py-4 rounded-2xl font-black border-2 border-white shadow-2xl hidden active:scale-95 transition-all">📍 PUBLICAR AQUÍ</button>
         </div>
         
         <div id="v-list" class="view bg-slate-50">
@@ -142,25 +157,24 @@
                         <option value="alquiler">Alquiler</option>
                     </select>
                 </div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase ml-2">Subir Foto desde PC:</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase ml-2">Subir Foto:</p>
                 <input type="file" id="p-file" accept="image/*" class="w-full p-3 bg-slate-50 border-2 border-dashed rounded-xl text-xs font-bold">
                 <input type="text" id="p-address" placeholder="Dirección" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
                 <input type="number" id="p-price" placeholder="Precio U$D" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
                 <input type="text" id="p-wa" placeholder="WhatsApp (Ej: 2494112233)" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
                 <button onclick="saveProp()" id="btn-save" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg text-lg">Publicar Gratis</button>
-                <button onclick="cancelAdd()" class="w-full py-4 text-slate-400 font-bold">Volver al Mapa</button>
+                <button onclick="cancelAdd()" class="w-full py-4 text-slate-400 font-bold text-center">Volver al Mapa</button>
             </div>
         </div>
     </div>
 
-    <nav class="bg-white">
+    <nav>
         <div onclick="showView('map')" id="t-map" class="nav-item active"><span>🗺️</span>MAPA</div>
         <div onclick="showView('list')" id="t-list" class="nav-item"><span>📋</span>LISTA</div>
     </nav>
 </div>
 
 <script>
-    // --- NAVEGACIÓN ---
     function startApp() {
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
@@ -173,7 +187,6 @@
         window.scrollTo(0,0);
     }
 
-    // --- FIREBASE ---
     const firebaseConfig = {
         apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
         authDomain: "tandilprop-56ec1.firebaseapp.com",
@@ -280,4 +293,4 @@
     loadData();
 </script>
 </body>
-                    </html>
+    </html>
