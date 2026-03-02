@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5719496512652584" crossorigin="anonymous"></script>
-    <link rel="manifest" href="manifest.json">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>TandilProp | Mercado Inmobiliario</title>
@@ -15,104 +14,68 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #fff; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+        /* Estructura Principal */
+        #landing-page { height: 100%; overflow-y: auto; display: block; }
         
-        body, html { 
-            margin: 0; padding: 0; 
-            height: 100%; width: 100%; 
-            background: #fff; font-family: 'Inter', sans-serif; 
-            overflow: hidden; 
-        }
-
-        /* --- LANDING PAGE --- */
-        #landing-page { 
-            height: 100%; overflow-y: auto; width: 100%; 
-            display: block; 
-        }
-
-        /* --- APP LAYOUT (EL FIX) --- */
         .app-shell { 
             display: none; 
-            grid-template-rows: auto 1fr auto; /* Header | Mapa | Nav */
-            height: 100dvh; /* dvh se adapta mejor a móviles */
-            width: 100%; 
-            position: fixed; top: 0; left: 0; 
-            z-index: 2000; background: white; 
+            flex-direction: column; 
+            height: 100vh; height: 100dvh; 
+            width: 100%; position: fixed; top: 0; left: 0; z-index: 2000; background: white; 
         }
 
-        header { 
-            background: white; border-bottom: 2px solid #f1f5f9; 
-            padding: 10px 15px; z-index: 10;
-        }
-
-        .main-content { 
-            position: relative; overflow: hidden; 
-            background: #f8fafc; 
-        }
-
-        #map { width: 100%; height: 100%; z-index: 1; }
-
-        .view { 
-            position: absolute; inset: 0; 
-            background: white; z-index: 10; 
-            display: none; overflow-y: auto;
-        }
+        header { height: 110px; border-bottom: 2px solid #f1f5f9; padding: 10px 15px; flex-shrink: 0; z-index: 3000; background: white; }
+        
+        .main-content { flex: 1; position: relative; overflow: hidden; }
+        
+        #map { width: 100%; height: 100%; position: absolute; inset: 0; z-index: 1; }
+        
+        .view { position: absolute; inset: 0; background: white; z-index: 10; display: none; overflow-y: auto; }
         .view.active { display: block; }
 
-        nav { 
-            height: 70px; background: white; 
-            border-top: 2px solid #f1f5f9; 
-            display: flex; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 3000;
-        }
-
-        .nav-item { 
-            flex: 1; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; 
-            color: #94a3b8; font-size: 11px; font-weight: 800; cursor: pointer;
-        }
+        nav { height: 75px; border-top: 2px solid #f1f5f9; display: flex; background: white; flex-shrink: 0; z-index: 4000; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #94a3b8; font-size: 11px; font-weight: 800; cursor: pointer; }
         .nav-item.active { color: #4f46e5; }
-        .nav-item span { font-size: 20px; }
+        .nav-item span { font-size: 22px; margin-bottom: 2px; }
 
-        /* Colores de pines */
+        /* Pines Colores */
         .pin-casa { filter: hue-rotate(190deg) brightness(0.9); }
         .pin-depto { filter: hue-rotate(15deg) saturate(3); }
         .pin-terreno { filter: hue-rotate(80deg) brightness(0.8); }
 
-        /* Botón Publicar */
         #btn-confirm {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 500; background: #4f46e5; color: white; 
-            padding: 12px 24px; border-radius: 15px; font-weight: 900;
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
-            display: none; white-space: nowrap;
+            z-index: 500; background: #4f46e5; color: white; padding: 12px 25px;
+            border-radius: 15px; font-weight: 900; box-shadow: 0 10px 20px rgba(79, 70, 229, 0.4);
+            display: none; border: 2px solid white;
         }
+
+        .hero-section { background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1449156001935-52614a37d6b5?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; min-height: 60vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white; }
     </style>
 </head>
 <body>
 
 <div id="landing-page">
-    <section class="bg-slate-800 text-white min-h-[60vh] flex items-center justify-center text-center p-6">
+    <section class="hero-section px-6">
         <div>
-            <p class="text-emerald-400 font-black uppercase tracking-widest text-sm mb-2">TandilProp</p>
-            <h1 class="text-4xl md:text-6xl font-black mb-6">Tu propiedad en el mapa.</h1>
-            <button onclick="startApp()" class="bg-indigo-600 px-8 py-4 rounded-full font-black text-lg shadow-xl active:scale-95 transition-all">VER MAPA VIVO</button>
+            <h1 class="text-emerald-400 font-black tracking-widest uppercase mb-2">TandilProp</h1>
+            <h2 class="text-4xl font-black mb-6 leading-tight">Tu propiedad en el mapa.</h2>
+            <button onclick="startApp()" class="bg-indigo-600 text-white px-10 py-5 rounded-full font-black text-lg shadow-2xl active:scale-95 transition-all">ABRIR MAPA VIVO</button>
         </div>
     </section>
-
-    <section class="p-8 bg-white max-w-4xl mx-auto">
-        <h2 class="text-2xl font-black text-slate-800 mb-6 italic border-l-4 border-indigo-600 pl-4 uppercase">Mercado Real Estate Tandil</h2>
-        <p class="text-slate-500 mb-10 text-sm leading-relaxed">Acceso directo a dueños e inmobiliarias con geolocalización de precisión. Datos actualizados 2026.</p>
-        
-        <div class="grid grid-cols-2 gap-4 mb-12">
-            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Valor m²</p>
+    <section class="p-10 bg-white max-w-4xl mx-auto text-center">
+        <h3 class="text-2xl font-black italic text-slate-800 mb-4 uppercase">Real Estate Tandil 2026</h3>
+        <p class="text-slate-500 mb-8 text-sm">Plataforma de geolocalización líder para inversores y dueños directos.</p>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="bg-slate-50 p-6 rounded-3xl border">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Valor m²</p>
                 <p class="text-2xl font-black text-indigo-600">U$D 1.250</p>
             </div>
-            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-1">En oferta</p>
+            <div class="bg-slate-50 p-6 rounded-3xl border">
+                <p class="text-[10px] font-black text-slate-400 uppercase">Ofertas</p>
                 <p class="text-2xl font-black text-indigo-600">+1.200</p>
             </div>
         </div>
@@ -122,51 +85,52 @@
 <div class="app-shell" id="main-app">
     <header>
         <div class="flex justify-between items-center mb-2">
-            <h1 onclick="goBack()" class="text-xl font-black text-indigo-600 italic tracking-tighter">TANDILPROP</h1>
-            <span class="text-[9px] font-black bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md uppercase">V2.0</span>
+            <h1 onclick="goBack()" class="text-xl font-black text-indigo-600 italic tracking-tighter cursor-pointer">TANDILPROP</h1>
+            <span class="text-[9px] font-black bg-indigo-50 text-indigo-600 px-2 py-1 rounded-md uppercase tracking-widest">App Mode</span>
         </div>
         <div class="flex gap-2">
-            <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border rounded-lg text-[10px] font-bold outline-none">
-                <option value="todos">TIPO: TODOS</option>
-                <option value="casa">🏠 CASAS</option>
-                <option value="depto">🏢 DEPTOS</option>
-                <option value="terreno">🌳 TERRENOS</option>
-            </select>
-            <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border rounded-lg text-[10px] font-bold outline-none">
-                <option value="todos">OPERACIÓN</option>
-                <option value="venta">VENTA</option>
-                <option value="alquiler">ALQUILER</option>
-            </select>
+            <select id="f-type" onchange="loadData()" class="flex-1 p-2 bg-slate-50 border rounded-lg text-[10px] font-bold outline-none"><option value="todos">TIPO: TODOS</option><option value="casa">🏠 CASAS</option><option value="depto">🏢 DEPTOS</option><option value="terreno">🌳 TERRENOS</option></select>
+            <select id="f-op" onchange="loadData()" class="flex-1 p-2 bg-indigo-50 text-indigo-600 border rounded-lg text-[10px] font-bold outline-none"><option value="todos">OPERACIÓN</option><option value="venta">VENTA</option><option value="alquiler">ALQUILER</option></select>
         </div>
     </header>
 
     <div class="main-content">
-        <div id="v-map" class="view active">
+        <div id="v-map" class="view active" style="display: block;">
             <div id="map"></div>
             <button id="btn-confirm" onclick="openForm()">📍 PUBLICAR AQUÍ</button>
         </div>
-        <div id="v-list" class="view bg-slate-50 p-4">
-            <div id="l-container" class="space-y-4"></div>
-            <div class="h-20"></div>
-        </div>
+        
+        <div id="v-list" class="view bg-slate-50">
+            <div id="l-container" class="p-4 space-y-4"></div>
+            <div class="h-24"></div>
         </div>
 
+        <div id="v-form" class="view p-6 bg-white">
+            <h2 class="text-2xl font-black mb-6 italic text-indigo-600 uppercase">Publicar</h2>
+            <div class="space-y-4 pb-32">
+                <input type="text" id="p-title" placeholder="Título" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+                <select id="p-type" class="w-full p-4 bg-slate-100 rounded-xl font-bold"><option value="casa">Casa</option><option value="depto">Depto</option><option value="terreno">Terreno</option></select>
+                <input type="file" id="p-file" accept="image/*" class="w-full p-3 border-2 border-dashed rounded-xl text-xs font-bold">
+                <input type="number" id="p-price" placeholder="U$D Precio" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+                <input type="text" id="p-wa" placeholder="WhatsApp" class="w-full p-4 bg-slate-100 rounded-xl font-bold">
+                <button onclick="saveProp()" id="btn-save" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg">Publicar Gratis</button>
+                <button onclick="cancelAdd()" class="w-full py-4 text-slate-400 font-bold text-center">Volver al Mapa</button>
+            </div>
+        </div>
+    </div>
+
     <nav>
-        <div onclick="showView('map')" id="t-map" class="nav-item active">
-            <span>🗺️</span> MAPA
-        </div>
-        <div onclick="showView('list')" id="t-list" class="nav-item">
-            <span>📋</span> LISTA
-        </div>
+        <div onclick="showView('map')" id="t-map" class="nav-item active"><span>🗺️</span>MAPA</div>
+        <div onclick="showView('list')" id="t-list" class="nav-item"><span>📋</span>LISTA</div>
     </nav>
 </div>
 
 <script>
+    // --- NAVEGACIÓN ---
     function startApp() {
         document.getElementById('landing-page').style.display = 'none';
-        const shell = document.getElementById('main-app');
-        shell.style.display = 'grid'; // Usamos grid para el layout
-        setTimeout(() => map.invalidateSize(), 400);
+        document.getElementById('main-app').style.display = 'flex';
+        setTimeout(() => { map.invalidateSize(); }, 400);
     }
 
     function goBack() {
@@ -174,8 +138,94 @@
         document.getElementById('landing-page').style.display = 'block';
     }
 
-    // Inicialización Firebase y Mapa... (Copia el resto de tu lógica anterior aquí)
-    // Asegúrate de copiar la parte de: map.on('click'), saveProp() y loadData()
+    function showView(v) {
+        document.querySelectorAll('.view').forEach(e => { e.style.display = 'none'; e.classList.remove('active'); });
+        document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+        
+        const targetView = document.getElementById('v-' + v);
+        targetView.style.display = 'block';
+        targetView.classList.add('active');
+        document.getElementById('t-' + v).classList.add('active');
+        
+        if(v === 'map') setTimeout(() => { map.invalidateSize(); }, 300);
+        else document.getElementById('btn-confirm').style.display = 'none';
+    }
+
+    // --- FIREBASE ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
+        authDomain: "tandilprop-56ec1.firebaseapp.com",
+        projectId: "tandilprop-56ec1",
+        databaseURL: "https://tandilprop-56ec1-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database().ref('tandil_vfinal_fix');
+
+    // --- MAPA ---
+    var map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+    var latC, lngC, tempM;
+
+    map.on('click', function(e) {
+        if (e.originalEvent.target.classList.contains('leaflet-marker-icon')) return;
+        if(tempM) map.removeLayer(tempM);
+        latC = e.latlng.lat; lngC = e.latlng.lng;
+        tempM = L.marker([latC, lngC], {draggable: true}).addTo(map);
+        document.getElementById('btn-confirm').style.display = 'block';
+    });
+
+    function openForm() { showView('form'); }
+    function cancelAdd() { if(tempM) map.removeLayer(tempM); document.getElementById('btn-confirm').style.display = 'none'; showView('map'); }
+
+    async function saveProp() {
+        const btn = document.getElementById('btn-save');
+        const fileInput = document.getElementById('p-file');
+        const title = document.getElementById('p-title').value;
+        const price = document.getElementById('p-price').value;
+        const wa = document.getElementById('p-wa').value;
+        if(!title || !price || !wa) return alert("Faltan datos");
+        
+        btn.disabled = true; btn.innerText = "Cargando...";
+        let imgData = "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=500";
+        
+        if(fileInput.files[0]) {
+            const reader = new FileReader();
+            reader.readAsDataURL(fileInput.files[0]);
+            reader.onload = () => {
+                db.push({ title, price, wa, type: document.getElementById('p-type').value, img: reader.result, lat: latC, lng: lngC })
+                .then(() => { alert("¡Publicado!"); location.reload(); });
+            };
+        } else {
+            db.push({ title, price, wa, type: document.getElementById('p-type').value, img: imgData, lat: latC, lng: lngC })
+            .then(() => { alert("¡Publicado!"); location.reload(); });
+        }
+    }
+
+    function loadData() {
+        db.on('value', snap => {
+            const list = snap.val() ? Object.values(snap.val()) : [];
+            const tF = document.getElementById('f-type').value;
+            map.eachLayer(l => { if(l instanceof L.Marker && l !== tempM) map.removeLayer(l); });
+            let html = "";
+            list.reverse().forEach(p => {
+                if(tF !== 'todos' && p.type !== tF) return;
+                var m = L.marker([p.lat, p.lng]).addTo(map);
+                if(m.getElement()) m.getElement().classList.add('pin-' + p.type);
+                
+                html += `<div class="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-100 flex flex-col">
+                    <img src="${p.img}" class="w-full h-44 object-cover rounded-[1.5rem] mb-3">
+                    <div class="text-center">
+                        <h4 class="font-black text-slate-800 uppercase text-xs truncate">${p.title}</h4>
+                        <p class="text-2xl font-black text-indigo-600 mb-3 tracking-tighter">U$D ${p.price}</p>
+                        <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-xl">Contactar</a>
+                    </div>
+                </div>`;
+            });
+            document.getElementById('l-container').innerHTML = html || "<p class='text-center py-10 font-bold opacity-30'>Sin propiedades</p>";
+        });
+    }
+    loadData();
 </script>
 </body>
-                                                                                                                                             </html>
+    </html>
