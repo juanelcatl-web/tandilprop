@@ -4,7 +4,7 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5719496512652584" crossorigin="anonymous"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TandilProp | Mercado Inmobiliario y Guía de Inversión</title>
+    <title>TandilProp | Mercado Inmobiliario 2026</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -47,8 +47,8 @@
             display: none; border: 2px solid white; white-space: nowrap;
         }
 
+        .leaflet-popup-content-wrapper { border-radius: 20px; padding: 5px; }
         .hero-section { background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), url('https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=80'); background-size: cover; background-position: center; min-height: 70vh; display: flex; align-items: center; justify-content: center; text-align: center; color: white; }
-        .card-barrio { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; }
     </style>
 </head>
 <body>
@@ -78,36 +78,14 @@
                 <h3 class="text-3xl font-black text-emerald-600 uppercase">4.5% Anual</h3>
             </div>
             <div class="p-8 bg-slate-50 rounded-[2rem] border border-slate-100">
-                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Nuevos Loteos</p>
-                <h3 class="text-3xl font-black text-indigo-600 uppercase">+15 Zonas</h3>
-            </div>
-        </div>
-
-        <div class="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-                <h2 class="text-3xl font-black text-slate-800 mb-6 uppercase italic border-l-8 border-indigo-600 pl-6">Guía de Inversión</h2>
-                <p class="text-slate-600 leading-relaxed mb-6 font-medium">Tandil es el polo tecnológico y turístico con mayor crecimiento de la provincia. Nuestra plataforma te permite ver el mercado real en tiempo real.</p>
-                <div class="space-y-4">
-                    <div class="card-barrio">
-                        <h4 class="font-black text-indigo-600 uppercase text-sm mb-1">Zona Don Bosco</h4>
-                        <p class="text-[11px] text-slate-500">Residencias exclusivas y vistas panorámicas únicas.</p>
-                    </div>
-                    <div class="card-barrio">
-                        <h4 class="font-black text-indigo-600 uppercase text-sm mb-1">Barrio Uncas / Graduados</h4>
-                        <p class="text-[11px] text-slate-500">Alta demanda de lotes y construcción de viviendas jóvenes.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-indigo-600 p-10 rounded-[3rem] text-white shadow-2xl">
-                <h3 class="text-2xl font-black mb-4 uppercase italic">¿Sos Dueño Directo?</h3>
-                <p class="opacity-80 mb-8 font-medium">Publicá tu casa o terreno gratis. Geolocalizá tu propiedad y recibí consultas directo a tu WhatsApp.</p>
-                <button onclick="startApp()" class="bg-white text-indigo-600 w-full py-4 rounded-xl font-black uppercase text-sm">Publicar Propiedad</button>
+                <p class="text-[10px] font-black text-slate-400 uppercase mb-2">Publicaciones</p>
+                <h3 class="text-3xl font-black text-indigo-600 uppercase">Dueño Directo</h3>
             </div>
         </div>
     </section>
 
     <footer class="bg-slate-900 py-12 text-center">
-        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">© 2026 TandilProp | UrbanGrowth Network</p>
+        <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">© 2026 TandilProp | PIN ADMINISTRADOR: 2026</p>
     </footer>
 </div>
 
@@ -153,7 +131,7 @@
                 
                 <div class="flex gap-2">
                     <input type="number" id="p-price" placeholder="U$D Precio" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
-                    <input type="text" id="p-wa" placeholder="WhatsApp" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
+                    <input type="text" id="p-wa" placeholder="WhatsApp (249...)" class="flex-1 p-4 bg-slate-100 rounded-xl font-bold outline-none">
                 </div>
 
                 <button onclick="saveProp()" id="btn-save" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black uppercase shadow-lg active:scale-95 transition-all">Confirmar Publicación</button>
@@ -169,6 +147,7 @@
 </div>
 
 <script>
+    // NAVEGACIÓN
     function startApp() {
         document.getElementById('landing-page').style.display = 'none';
         document.getElementById('main-app').style.display = 'flex';
@@ -190,6 +169,7 @@
         else document.getElementById('btn-confirm').style.display = 'none';
     }
 
+    // FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBUViSxd76R5Xc3h4obWtbkGEXADPH8qTw",
         authDomain: "tandilprop-56ec1.firebaseapp.com",
@@ -199,6 +179,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database().ref('tandil_vfinal_fix');
 
+    // MAPA
     var map = L.map('map', {zoomControl: false, attributionControl: false}).setView([-37.3217, -59.1332], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
@@ -257,7 +238,7 @@
         const pin = prompt("PIN de administrador para borrar:");
         if (pin === "2026") {
             if (confirm("¿Eliminar definitivamente?")) {
-                db.child(id).remove().then(() => alert("Eliminado."));
+                db.child(id).remove().then(() => alert("Eliminado correctamente."));
             }
         } else {
             alert("PIN incorrecto.");
@@ -278,24 +259,39 @@
                     if(tF !== 'todos' && p.type !== tF) return;
                     if(oF !== 'todos' && p.op !== oF) return;
 
+                    // MARCADOR CON POPUP
                     var m = L.marker([p.lat, p.lng]).addTo(map);
                     if(m.getElement()) m.getElement().classList.add('pin-' + p.type);
                     
+                    const popupHTML = `
+                        <div style="width:180px; font-family:'Inter', sans-serif;">
+                            <img src="${p.img}" style="width:100%; height:100px; object-fit:cover; border-radius:12px; margin-bottom:8px;">
+                            <p style="font-weight:900; font-size:14px; margin:0;">U$D ${p.price}</p>
+                            <p style="font-size:10px; color:#64748b; font-weight:700; text-transform:uppercase; margin-bottom:8px;">${p.type} | ${p.op}</p>
+                            <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" 
+                               style="display:block; background:#4f46e5; color:white; text-align:center; padding:10px; border-radius:10px; font-size:10px; font-weight:900; text-decoration:none; text-transform:uppercase;">
+                               Contactar WhatsApp
+                            </a>
+                        </div>
+                    `;
+                    m.bindPopup(popupHTML, { closeButton: false, offset: L.point(0, -15) });
+                    
+                    // TARJETA DE LISTA
                     html += `
                     <div class="bg-white rounded-[2rem] p-4 shadow-sm border border-slate-100 relative">
                         <button onclick="deleteProp('${key}')" class="absolute top-6 right-6 bg-red-100 text-red-500 w-8 h-8 rounded-full flex items-center justify-center text-xs shadow-sm z-50">🗑️</button>
                         <img src="${p.img}" class="w-full h-44 object-cover rounded-[1.5rem] mb-3">
                         <h4 class="font-black text-slate-800 uppercase text-xs mb-1 truncate">${p.title}</h4>
                         <p class="text-[10px] text-slate-400 font-bold mb-2 uppercase">${p.address || ''}</p>
-                        <p class="text-2xl font-black text-indigo-600 mb-3 tracking-tighter">U$D ${p.price} <span class="text-[10px] text-indigo-300 ml-1">${p.op}</span></p>
-                        <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-xl text-center">Contactar</a>
+                        <p class="text-2xl font-black text-indigo-600 mb-3 tracking-tighter">U$D ${p.price} <span class="text-[10px] text-indigo-300 ml-1 italic">${p.op}</span></p>
+                        <a href="https://wa.me/${p.wa.replace(/\D/g,'')}" target="_blank" class="block w-full bg-slate-900 text-white py-4 rounded-2xl font-black uppercase text-[10px] shadow-xl text-center">WhatsApp Directo</a>
                     </div>`;
                 });
             }
-            document.getElementById('l-container').innerHTML = html || "<p class='text-center py-20 font-bold opacity-30'>Sin anuncios activos</p>";
+            document.getElementById('l-container').innerHTML = html || "<p class='text-center py-20 font-bold opacity-30 uppercase text-xs'>Sin anuncios activos</p>";
         });
     }
     loadData();
 </script>
 </body>
-</html>
+    </html>
